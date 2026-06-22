@@ -12,3 +12,45 @@ body {
   margin: 0 auto;
   padding: 28px 22px;
 }
+h1 {
+  font-size: 20px;
+  font-weight: 700;
+}
+.dropzone {
+  border: 1px dashed #34555a;
+  border-radius: 10px;
+  padding: 28px;
+  text-align: center;
+  color: #8da6a2;
+  cursor: pointer;
+  margin: 16px 0;
+}
+.dropzone.over {
+  border-color: #e3a95c;
+  color: #e9eeea;
+}
+.status {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: #8da6a2;
+}
+.status.error {
+  color: #e8826a;
+}
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, monospace;
+  font-size: 12.5px;
+}
+table.data th,
+table.data td {
+  text-align: left;
+  padding: 7px 12px;
+  border-bottom: 1px solid #1d363b;
+}
+table.data th {
+  color: #5c7975;
+  text-transform: uppercase;
+  font-size: 10.5px;
+}
