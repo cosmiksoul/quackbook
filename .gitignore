@@ -3,3 +3,7 @@ dist
 *.local
 .DS_Store
 node_modules/.tmp
+
+# data files are loaded at runtime, never committed; the DuckDB node smoke test
+# also writes a *.parquet into CWD during `npm test`.
+*.parquet
