@@ -43,10 +43,10 @@ export async function createNodeDuckDB(): Promise<duckdb.AsyncDuckDB> {
     removeEventListener(type: string, fn: Listener) {
       listeners[type] = (listeners[type] ?? []).filter((f) => f !== fn)
     },
-    postMessage(data: unknown, transfer?: unknown) {
+    postMessage(data: unknown, transfer?: Transferable[]) {
       nodeWorker.postMessage(
         data,
-        transfer as ConstructorParameters<typeof Worker>[1],
+        transfer as unknown as readonly import('node:worker_threads').TransferListItem[],
       )
     },
     terminate() {
@@ -69,7 +69,7 @@ export async function createNodeDuckDB(): Promise<duckdb.AsyncDuckDB> {
   const logger = new duckdb.VoidLogger()
   const db = new duckdb.AsyncDuckDB(
     logger,
-    workerShim as unknown as Parameters<typeof duckdb.AsyncDuckDB.prototype.attach>[0],
+    workerShim as unknown as globalThis.Worker,
   )
   // Raw OS path (not file:// URL): the EH worker's readBinary uses
   // nodePath.normalize() when the path is not a file: URI.
