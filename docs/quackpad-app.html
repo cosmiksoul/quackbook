@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>quackpad — исследование / отчёт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1517; --app:#0F1E21; --surface:#14272B; --surface-2:#1A333A;
+    --line:#274247; --line-soft:#1D363B;
+    --text:#E9EEEA; --muted:#8DA6A2; --faint:#5C7975;
+    --sand:#E3A95C; --sand-soft:#9A7C4B; --coral:#E8826A; --teal:#79C6BC; --str:#CBB98C;
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --disp:'Bricolage Grotesque',var(--sans);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:radial-gradient(1200px 600px at 78% -10%, #16313699 0%, transparent 60%), var(--ink);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;padding:28px 22px;display:flex;justify-content:center}
+  .app{position:relative;width:100%;max-width:1240px;background:var(--app);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 30px 70px -28px #000c,0 0 0 1px #ffffff06 inset;display:flex;flex-direction:column;height:846px;animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* top bar + mode toggle */
+  .topbar{display:flex;align-items:center;gap:16px;padding:11px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#16292e,#13252a)}
+  .brand{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:-.02em}
+  .glyph{width:23px;height:23px;border-radius:7px;background:linear-gradient(150deg,var(--sand),#c98a3e);display:grid;place-items:center;color:#1a1206;font-weight:800;font-size:13px;box-shadow:0 2px 10px -2px #e3a95c66}
+  .modeseg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#0f1f23;margin-left:4px}
+  .modeseg button{font-family:var(--sans);font-size:12.5px;font-weight:500;color:var(--muted);border:0;background:transparent;padding:7px 15px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.15s}
+  .modeseg button .mi{font-family:var(--mono);font-size:12px}
+  .modeseg button.on{background:#1a333a;color:var(--text)}
+  .modeseg button:hover:not(.on){color:var(--text)}
+  .modeseg .badge{font-family:var(--mono);font-size:9.5px;background:#2a230f;color:var(--sand);border:1px solid #4a3a22;border-radius:999px;padding:0 5px;min-width:16px;text-align:center;transition:transform .2s}
+  .badge.bump{transform:scale(1.35)}
+  .spacer{flex:1}
+  .ctxt{font-family:var(--mono);font-size:11px;color:var(--faint);display:flex;align-items:center;gap:7px}
+  .ctxt .st{border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--faint)}
+  .pill{font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 11px;display:inline-flex;align-items:center;gap:7px;background:#0f1f23}
+  .pill .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px #79c6bc22}
+  .btn{font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;border-radius:8px;padding:7px 12px;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#13262b;color:var(--text);transition:.15s}
+  .btn:hover{border-color:#34555a;background:#16302f}
+  .btn .ico{font-family:var(--mono)}
+  .btn.primary{background:linear-gradient(180deg,var(--sand),#cf933f);border-color:#cf933f;color:#1a1206;font-weight:600;box-shadow:0 4px 14px -6px #e3a95c80}
+  .btn.primary:hover{filter:brightness(1.06)}
+  .btn.pin{border-color:var(--sand-soft);color:var(--sand);background:#211b0f}
+  .btn.pin:hover{background:#2a230f}
+
+  .body{display:grid;grid-template-columns:262px 1fr;flex:1;min-height:0}
+
+  /* rail (shared) */
+  .rail{border-right:1px solid var(--line);padding:16px 14px;display:flex;flex-direction:column;gap:8px;background:#0d1c1f;overflow:auto}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:500;margin-bottom:2px}
+  .src{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+  .src:hover{background:#13262b}.src.active{background:#16302f;border-color:#2e4a45}
+  .src .ic{width:18px;height:18px;display:grid;place-items:center;font-family:var(--mono);font-size:9px;font-weight:600;border-radius:4px}
+  .ic.csv{background:#2a3a2f;color:#9fd6ad}.ic.pq{background:#3a3528;color:var(--sand)}
+  .src .nm{font-size:13px;font-family:var(--mono)}
+  .src .meta{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint)}
+  .src.active .meta{color:var(--muted)}
+  .rdiv{height:1px;background:var(--line-soft);margin:9px 2px}
+  .schead{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .schead .ed{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:2px 7px;cursor:pointer}
+  .schead .ed:hover{color:var(--muted);border-color:#34555a}
+  .scol{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:7px;cursor:pointer;transition:opacity .35s,background .2s}
+  .scol:hover{background:#13262b}
+  .scol .tick{width:3px;height:14px;border-radius:2px;background:transparent;transition:.3s;flex:0 0 auto}
+  .scol .cn{font-family:var(--mono);font-size:12.5px}
+  .scol .ct{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint)}
+  .scol .mk{font-family:var(--mono);font-size:10px}.scol .mk.warn{color:var(--coral)}.scol .mk.ed{color:var(--teal)}
+  .scol.used .tick{background:var(--sand);box-shadow:0 0 9px -1px var(--sand)}
+  .scol.used .cn{color:var(--text)}.scol.used .ct{color:var(--sand)}
+  .scol.pruned{opacity:.34}
+  .profbtn{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:#11221f;cursor:pointer;font-family:var(--sans);font-size:12.5px;color:var(--text);transition:.15s}
+  .profbtn:hover{border-color:#34555a;background:#16302f}
+  .profbtn .pic{font-family:var(--mono);color:var(--sand);font-size:12px}
+  .railnote{font-family:var(--mono);font-size:10px;color:var(--faint);padding:6px 8px;line-height:1.5}
+
+  .main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+  .hidden{display:none!important}
+
+  .phead{display:flex;align-items:center;gap:12px;padding:13px 20px 11px}
+  .phead .title b{font-family:var(--disp);font-weight:600;font-size:14px;letter-spacing:-.01em}
+  .phead .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+  /* ===== EXPLORE ===== */
+  #explore{display:flex;flex-direction:column;flex:1;min-height:0}
+  .qtabs{display:flex;gap:6px}
+  .qtab{font-family:var(--mono);font-size:11.5px;color:var(--muted);cursor:pointer;border:1px solid var(--line);background:transparent;border-radius:7px;padding:5px 11px;transition:.15s}
+  .qtab:hover{color:var(--text);border-color:#34555a}
+  .qtab.on{color:var(--sand);border-color:var(--sand-soft);background:#211b0f}
+  .editor{margin:0 20px 16px;border:1px solid var(--line);border-radius:10px;background:#0c1a1d;display:flex;overflow:hidden;min-height:150px}
+  .gutter{padding:13px 0;background:#0a1619;color:var(--faint);font-family:var(--mono);font-size:12.5px;text-align:right;user-select:none;border-right:1px solid var(--line-soft);min-width:40px}
+  .gutter span{display:block;padding:0 12px;line-height:1.8}
+  .code{padding:13px 16px;font-family:var(--mono);font-size:13px;line-height:1.8;white-space:pre;flex:1;overflow-x:auto}
+  .kw{color:var(--sand)}.fn{color:var(--teal)}.num{color:var(--coral)}.str{color:var(--str)}
+  .runhint{padding:13px 16px;color:var(--faint);font-family:var(--mono);font-size:11px;align-self:flex-end;margin-left:auto;white-space:nowrap}
+  .r-panel{flex:1;display:flex;flex-direction:column;min-height:0;border-top:1px solid var(--line)}
+  .rmeta{font-family:var(--mono);font-size:11.5px;color:var(--muted)}.rmeta b{color:var(--text);font-weight:600}
+  .rtabs{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .rtabs button{font-family:var(--sans);font-size:12px;cursor:pointer;border:0;background:transparent;color:var(--muted);padding:6px 13px;transition:.15s;border-right:1px solid var(--line-soft)}
+  .rtabs button:last-child{border-right:0}
+  .rtabs button.on{background:#1a333a;color:var(--text)}.rtabs button:hover:not(.on){color:var(--text)}
+  .rbody{flex:1;overflow:auto;padding:6px 20px 18px}
+
+  /* tables / charts (shared) */
+  table.data{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+  table.data th{text-align:left;color:var(--faint);font-weight:500;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:7px 12px;border-bottom:1px solid var(--line)}
+  table.data td{padding:7px 12px;border-bottom:1px solid var(--line-soft);color:var(--text)}
+  table.data tr:last-child td{border-bottom:0}
+  table.data td.numv{color:var(--muted);text-align:right;white-space:nowrap}
+  .barchart{display:flex;flex-direction:column;gap:10px;padding:8px 4px}
+  .bc-row{display:grid;grid-template-columns:60px 1fr 60px;align-items:center;gap:12px}
+  .bc-row .lbl{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .bc-row .val{font-family:var(--mono);font-size:12px;color:var(--text);text-align:right}
+  .bc-track{height:23px;border-radius:5px;background:#12252a;overflow:hidden}
+  .bc-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#cf933f,var(--sand));box-shadow:inset 0 0 0 1px #ffffff14;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes grow{from{width:0!important}}
+
+  /* profile cards */
+  .psub{font-family:var(--mono);font-size:11px;color:var(--faint);padding:4px 2px 12px}.psub b{color:var(--muted);font-weight:500}
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+  .pcard{border:1px solid var(--line);border-radius:10px;background:#11221f;overflow:hidden}
+  .pc-head{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--line-soft);background:#10211f}
+  .pc-name{font-family:var(--mono);font-size:13px}.pc-type{font-family:var(--mono);font-size:9.5px;color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  .pc-distinct{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted)}
+  .pc-rows{padding:10px 13px;display:flex;flex-direction:column;gap:8px}
+  .pc-row{display:grid;grid-template-columns:70px 1fr 50px;align-items:center;gap:9px}
+  .pc-row .pv{font-family:var(--mono);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pc-row .pn{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
+  .pt{height:8px;border-radius:3px;background:#16302f;overflow:hidden}.pf{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--sand),#cf933f)}
+  .pc-more{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+  .histo{display:flex;align-items:flex-end;gap:3px;height:72px;padding:6px 0 4px}
+  .histo .hb{flex:1;background:linear-gradient(180deg,var(--sand),#9a6f33);border-radius:3px 3px 0 0;min-height:4px;opacity:.9}
+  .pstats{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--muted);border-top:1px solid var(--line-soft);padding-top:9px}.pstats .k{color:var(--faint)}
+
+  .statusbar{display:flex;align-items:center;gap:14px;padding:9px 18px;background:#0c1a1d;border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .statusbar .scan{color:var(--sand)}.statusbar .end{margin-left:auto;color:var(--faint)}.statusbar .end b{color:var(--muted);font-weight:500}
+
+  /* ===== REPORT ===== */
+  #report{flex:1;overflow-y:auto;background:var(--app)}
+  .nb{max-width:780px;margin:0 auto;padding:28px 26px 70px}
+  .block{position:relative;padding-left:26px;margin:6px 0}
+  .handle{position:absolute;left:0;top:6px;width:18px;color:var(--faint);opacity:0;cursor:grab;font-size:13px;transition:opacity .15s;user-select:none}
+  .block:hover .handle{opacity:.55}.handle:hover{opacity:1!important;color:var(--muted)}
+  .text-block{padding:8px 2px}
+  .text-block h1{font-family:var(--disp);font-weight:700;font-size:25px;letter-spacing:-.02em;margin-bottom:6px}
+  .text-block p{font-size:14.5px;line-height:1.62;color:#cfded9}.text-block p+p{margin-top:9px}
+  .text-block code{font-family:var(--mono);font-size:12.5px;background:#16302f;border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--teal)}
+  .text-block b{color:var(--text);font-weight:600}
+  .w-card{border:1px solid var(--line);border-radius:12px;background:#11221f;overflow:hidden;transition:border-color .2s,box-shadow .2s;margin:10px 0}
+  .w-card.active{border-color:var(--sand-soft);box-shadow:0 0 0 1px var(--sand-soft),0 0 26px -14px var(--sand)}
+  .w-head{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line-soft);background:#10211f}
+  .w-title{font-family:var(--disp);font-weight:600;font-size:13.5px}
+  .w-tools{margin-left:auto;display:flex;align-items:center;gap:6px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .seg button{font-family:var(--sans);font-size:11px;cursor:pointer;border:0;background:transparent;color:var(--muted);padding:4px 10px;transition:.15s}
+  .seg button.on{background:#1a333a;color:var(--text)}.seg button:hover:not(.on){color:var(--text)}
+  .ibtn{font-family:var(--mono);font-size:12px;color:var(--faint);border:1px solid var(--line);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;transition:.15s}
+  .ibtn:hover{color:var(--muted);border-color:#34555a}
+  .w-query{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:11.5px;color:var(--faint);cursor:pointer;background:#0e1d1b}
+  .w-query:hover{color:var(--muted)}.w-query .kw{color:var(--sand-soft)}.w-query .car{margin-left:auto;font-size:9px}
+  .w-body{padding:14px}
+  .w-cap{font-family:var(--sans);font-size:12px;color:var(--muted);font-style:italic;padding:0 14px 13px}
+  .addrow{display:flex;gap:8px;justify-content:center;padding:16px 0 0}
+  .addbtn{font-family:var(--sans);font-size:12.5px;color:var(--muted);border:1px solid var(--line-soft);background:transparent;border-radius:8px;padding:8px 16px;cursor:pointer;transition:.15s}
+  .addbtn:hover{color:var(--text);border-color:#34555a;background:#13262b}
+
+  /* toast */
+  .toast{position:absolute;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#1a333a;border:1px solid var(--sand-soft);color:var(--text);font-family:var(--sans);font-size:12.5px;padding:9px 16px;border-radius:10px;box-shadow:0 12px 30px -12px #000;display:flex;align-items:center;gap:9px;opacity:0;pointer-events:none;transition:.25s}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast .tk{font-family:var(--mono);color:var(--sand)}
+
+  :focus-visible{outline:2px solid var(--sand);outline-offset:2px;border-radius:6px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @media (max-width:900px){body{padding:12px 8px}.body{grid-template-columns:1fr}.rail{border-right:0;border-bottom:1px solid var(--line)}.pgrid{grid-template-columns:1fr}.nb{padding:20px 16px 60px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOP BAR with mode toggle -->
+  <header class="topbar">
+    <div class="brand"><span class="glyph">◗</span> quackpad</div>
+    <div class="modeseg">
+      <button class="on" data-mode="explore"><span class="mi">⌕</span> исследование</button>
+      <button data-mode="report"><span class="mi">▤</span> отчёт <span class="badge" id="repBadge">3</span></button>
+    </div>
+    <span class="spacer"></span>
+    <span class="ctxt" id="ctxt">events.csv · рабочий стол</span>
+    <span class="pill"><span class="dot"></span>local</span>
+    <button class="btn"><span class="ico">⇧</span> сохранить</button>
+  </header>
+
+  <div class="body">
+
+    <!-- RAIL -->
+    <aside class="rail">
+      <div class="eyebrow">источники</div>
+      <div class="src active"><span class="ic csv">CSV</span><span class="nm">events.csv</span><span class="meta">48k</span></div>
+      <div class="src"><span class="ic pq">PQ</span><span class="nm">orders.parquet</span><span class="meta">2.1M</span></div>
+      <div class="rdiv"></div>
+      <div class="schead"><span class="eyebrow" style="margin:0">схема · events.csv</span><span class="ed">✎ типы</span></div>
+      <div class="scol" data-col="user_id"><span class="tick"></span><span class="cn">user_id</span><span class="ct">VARCHAR</span></div>
+      <div class="scol" data-col="country"><span class="tick"></span><span class="cn">country</span><span class="ct">VARCHAR</span></div>
+      <div class="scol" data-col="zip"><span class="tick"></span><span class="cn">zip</span><span class="mk ed">✎</span><span class="ct">VARCHAR</span></div>
+      <div class="scol" data-col="signup"><span class="tick"></span><span class="cn">signup</span><span class="mk ed">✎</span><span class="ct">DATE</span></div>
+      <div class="scol" data-col="revenue"><span class="tick"></span><span class="cn">revenue</span><span class="mk warn">⚠</span><span class="ct">DOUBLE</span></div>
+      <div class="scol" data-col="device"><span class="tick"></span><span class="cn">device</span><span class="ct">VARCHAR</span></div>
+      <div class="scol" data-col="channel"><span class="tick"></span><span class="cn">channel</span><span class="ct">VARCHAR</span></div>
+      <div class="rdiv"></div>
+      <button class="profbtn" id="profBtn"><span class="pic">▦</span> профиль источника</button>
+      <div class="railnote" id="railnote">◗ подсвечены колонки, которые читает текущий запрос</div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- ===================== EXPLORE ===================== -->
+      <div id="explore">
+        <div class="phead">
+          <div class="title"><b>Запрос</b></div>
+          <div class="right">
+            <div class="qtabs">
+              <button class="qtab on" data-q="q1">страны</button>
+              <button class="qtab" data-q="q2">ARPU по месяцам</button>
+            </div>
+            <button class="btn primary" id="runBtn"><span class="ico">▷</span> запустить</button>
+          </div>
+        </div>
+        <div class="editor">
+          <div class="gutter"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+          <div class="code" data-q="q1"><span class="kw">SELECT</span> country, <span class="fn">count</span>(*) <span class="kw">AS</span> n
+<span class="kw">FROM</span> events
+<span class="kw">GROUP BY</span> <span class="num">1</span>
+<span class="kw">ORDER BY</span> n <span class="kw">DESC</span>;</div>
+          <div class="code hidden" data-q="q2"><span class="kw">SELECT</span> <span class="fn">date_trunc</span>(<span class="str">'month'</span>, signup) <span class="kw">AS</span> m,
+       <span class="fn">round</span>(<span class="fn">avg</span>(revenue), <span class="num">2</span>) <span class="kw">AS</span> arpu
+<span class="kw">FROM</span> events
+<span class="kw">GROUP BY</span> <span class="num">1</span> <span class="kw">ORDER BY</span> <span class="num">1</span>;</div>
+          <div class="runhint">⌘↵</div>
+        </div>
+
+        <section class="r-panel">
+          <div class="phead">
+            <div class="title"><b>Результат</b></div>
+            <div class="right">
+              <span class="rmeta" id="rmeta"><b>12</b> строк · 6 мс</span>
+              <div class="rtabs" id="rtabs">
+                <button class="on" data-view="table">таблица</button>
+                <button data-view="chart">график</button>
+                <button data-view="profile">профиль</button>
+              </div>
+              <button class="btn pin" id="pinBtn"><span class="ico">📌</span> закрепить в отчёт</button>
+            </div>
+          </div>
+          <div class="rbody">
+
+            <!-- profile (shared) -->
+            <div class="view-profile hidden">
+              <div class="psub">профиль источника · <b>events.csv</b> · 48 210 строк · один проход (SUMMARIZE)</div>
+              <div class="pgrid">
+                <div class="pcard"><div class="pc-head"><span class="pc-name">country</span><span class="pc-type">VARCHAR</span><span class="pc-distinct">12 distinct</span></div><div class="pc-rows">
+                  <div class="pc-row"><span class="pv">DE</span><div class="pt"><div class="pf" style="width:100%"></div></div><span class="pn">12 840</span></div>
+                  <div class="pc-row"><span class="pv">PL</span><div class="pt"><div class="pf" style="width:75%"></div></div><span class="pn">9 610</span></div>
+                  <div class="pc-row"><span class="pv">RU</span><div class="pt"><div class="pf" style="width:64%"></div></div><span class="pn">8 205</span></div>
+                  <div class="pc-row"><span class="pv">KZ</span><div class="pt"><div class="pf" style="width:48%"></div></div><span class="pn">6 120</span></div>
+                  <div class="pc-more">+8 ещё</div></div></div>
+                <div class="pcard"><div class="pc-head"><span class="pc-name">channel</span><span class="pc-type">VARCHAR</span><span class="pc-distinct">4 distinct</span></div><div class="pc-rows">
+                  <div class="pc-row"><span class="pv">paid</span><div class="pt"><div class="pf" style="width:100%"></div></div><span class="pn">21 300</span></div>
+                  <div class="pc-row"><span class="pv">organic</span><div class="pt"><div class="pf" style="width:87%"></div></div><span class="pn">18 440</span></div>
+                  <div class="pc-row"><span class="pv">referral</span><div class="pt"><div class="pf" style="width:29%"></div></div><span class="pn">6 120</span></div>
+                  <div class="pc-row"><span class="pv">email</span><div class="pt"><div class="pf" style="width:11%"></div></div><span class="pn">2 350</span></div></div></div>
+                <div class="pcard"><div class="pc-head"><span class="pc-name">device</span><span class="pc-type">VARCHAR</span><span class="pc-distinct">3 distinct</span></div><div class="pc-rows">
+                  <div class="pc-row"><span class="pv">ios</span><div class="pt"><div class="pf" style="width:100%"></div></div><span class="pn">22 100</span></div>
+                  <div class="pc-row"><span class="pv">android</span><div class="pt"><div class="pf" style="width:90%"></div></div><span class="pn">19 800</span></div>
+                  <div class="pc-row"><span class="pv">web</span><div class="pt"><div class="pf" style="width:29%"></div></div><span class="pn">6 310</span></div></div></div>
+                <div class="pcard"><div class="pc-head"><span class="pc-name">revenue</span><span class="pc-type">DOUBLE</span><span class="pc-distinct" style="color:var(--coral)">null · 3</span></div><div class="pc-rows">
+                  <div class="histo"><div class="hb" style="height:22%"></div><div class="hb" style="height:58%"></div><div class="hb" style="height:96%"></div><div class="hb" style="height:78%"></div><div class="hb" style="height:54%"></div><div class="hb" style="height:38%"></div><div class="hb" style="height:24%"></div><div class="hb" style="height:15%"></div><div class="hb" style="height:9%"></div><div class="hb" style="height:6%"></div></div>
+                  <div class="pstats"><span><span class="k">min</span> 0.99</span><span><span class="k">median</span> 14.50</span><span><span class="k">max</span> 312.00</span></div></div></div>
+              </div>
+            </div>
+
+            <!-- q1 result -->
+            <div class="result-block" data-q="q1">
+              <div class="view-table">
+                <table class="data"><thead><tr><th>country</th><th>n</th></tr></thead><tbody>
+                  <tr><td>DE</td><td class="numv">12 840</td></tr><tr><td>PL</td><td class="numv">9 610</td></tr>
+                  <tr><td>RU</td><td class="numv">8 205</td></tr><tr><td>KZ</td><td class="numv">6 120</td></tr>
+                  <tr><td>BY</td><td class="numv">4 980</td></tr><tr><td>UA</td><td class="numv">2 470</td></tr></tbody></table>
+              </div>
+              <div class="view-chart hidden"><div class="barchart">
+                <div class="bc-row"><span class="lbl">DE</span><div class="bc-track"><div class="bc-fill" style="width:100%"></div></div><span class="val">12 840</span></div>
+                <div class="bc-row"><span class="lbl">PL</span><div class="bc-track"><div class="bc-fill" style="width:75%"></div></div><span class="val">9 610</span></div>
+                <div class="bc-row"><span class="lbl">RU</span><div class="bc-track"><div class="bc-fill" style="width:64%"></div></div><span class="val">8 205</span></div>
+                <div class="bc-row"><span class="lbl">KZ</span><div class="bc-track"><div class="bc-fill" style="width:48%"></div></div><span class="val">6 120</span></div>
+                <div class="bc-row"><span class="lbl">BY</span><div class="bc-track"><div class="bc-fill" style="width:39%"></div></div><span class="val">4 980</span></div>
+              </div></div>
+            </div>
+
+            <!-- q2 result -->
+            <div class="result-block hidden" data-q="q2">
+              <div class="view-table">
+                <table class="data"><thead><tr><th>m</th><th>arpu</th></tr></thead><tbody>
+                  <tr><td>2026-01</td><td class="numv">17.20</td></tr><tr><td>2026-02</td><td class="numv">18.05</td></tr>
+                  <tr><td>2026-03</td><td class="numv">19.40</td></tr><tr><td>2026-04</td><td class="numv">18.90</td></tr>
+                  <tr><td>2026-05</td><td class="numv">21.10</td></tr><tr><td>2026-06</td><td class="numv">22.30</td></tr></tbody></table>
+              </div>
+              <div class="view-chart hidden">
+                <svg viewBox="0 0 560 200" width="100%" height="200" preserveAspectRatio="xMidYMid meet" font-family="IBM Plex Mono">
+                  <g stroke="#1d363b" stroke-width="1"><line x1="36" y1="20" x2="544" y2="20"/><line x1="36" y1="70" x2="544" y2="70"/><line x1="36" y1="120" x2="544" y2="120"/><line x1="36" y1="170" x2="544" y2="170"/></g>
+                  <g fill="#5C7975" font-size="9.5"><text x="4" y="24">24</text><text x="4" y="124">16</text><text x="4" y="174">12</text></g>
+                  <polygon fill="#E3A95C14" points="70,134 164,123 258,96 352,106 446,62 524,38 524,170 70,170"/>
+                  <polyline fill="none" stroke="#E3A95C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="70,134 164,123 258,96 352,106 446,62 524,38"/>
+                  <g fill="#E3A95C"><circle cx="70" cy="134" r="3.2"/><circle cx="164" cy="123" r="3.2"/><circle cx="258" cy="96" r="3.2"/><circle cx="352" cy="106" r="3.2"/><circle cx="446" cy="62" r="3.2"/><circle cx="524" cy="38" r="3.2"/></g>
+                  <g fill="#5C7975" font-size="9" text-anchor="middle"><text x="70" y="190">янв</text><text x="164" y="190">фев</text><text x="258" y="190">мар</text><text x="352" y="190">апр</text><text x="446" y="190">май</text><text x="524" y="190">июн</text></g>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </section>
+        <footer class="statusbar">
+          <span>events.csv · 48 210 строк · 7 колонок</span>
+          <span class="scan" id="scanStat">1 / 7 колонок прочитано · 38 KB</span>
+          <span class="end"><b>DuckDB-WASM</b> 1.5.4 · single-thread · local</span>
+        </footer>
+      </div>
+
+      <!-- ===================== REPORT ===================== -->
+      <div id="report" class="hidden">
+        <div class="nb">
+          <div class="block"><span class="handle">⠿</span><div class="text-block">
+            <h1>Воронка по странам и каналам</h1>
+            <p>Беглый срез <code>events.csv</code> (48 210 строк) перед тем, как заводить дашборд в проде. Три вопроса: откуда трафик, сколько приносят пользователи и как ведёт себя ARPU по месяцам.</p>
+          </div></div>
+
+          <div class="block"><span class="handle">⠿</span>
+            <div class="w-card active" data-cols="country">
+              <div class="w-head"><span class="w-title">Распределение по странам</span><div class="w-tools"><div class="seg vseg"><button data-v="table">таблица</button><button class="on" data-v="chart">график</button></div><button class="ibtn">⋯</button></div></div>
+              <div class="w-query"><span class="kw">SELECT</span>&nbsp;country, count(*) <span class="kw">AS</span> n <span class="kw">FROM</span> events <span class="kw">GROUP BY</span> 1 …<span class="car">▾</span></div>
+              <div class="w-body"><div class="w-viz">
+                <div class="w-table hidden"><table class="data"><thead><tr><th>country</th><th>n</th></tr></thead><tbody><tr><td>DE</td><td class="numv">12 840</td></tr><tr><td>PL</td><td class="numv">9 610</td></tr><tr><td>RU</td><td class="numv">8 205</td></tr><tr><td>KZ</td><td class="numv">6 120</td></tr><tr><td>BY</td><td class="numv">4 980</td></tr></tbody></table></div>
+                <div class="w-chart"><div class="barchart">
+                  <div class="bc-row"><span class="lbl">DE</span><div class="bc-track"><div class="bc-fill" style="width:100%"></div></div><span class="val">12 840</span></div>
+                  <div class="bc-row"><span class="lbl">PL</span><div class="bc-track"><div class="bc-fill" style="width:75%"></div></div><span class="val">9 610</span></div>
+                  <div class="bc-row"><span class="lbl">RU</span><div class="bc-track"><div class="bc-fill" style="width:64%"></div></div><span class="val">8 205</span></div>
+                  <div class="bc-row"><span class="lbl">KZ</span><div class="bc-track"><div class="bc-fill" style="width:48%"></div></div><span class="val">6 120</span></div>
+                  <div class="bc-row"><span class="lbl">BY</span><div class="bc-track"><div class="bc-fill" style="width:39%"></div></div><span class="val">4 980</span></div>
+                </div></div>
+              </div></div>
+              <div class="w-cap">DE и PL — почти половина объёма.</div>
+            </div>
+          </div>
+
+          <div class="block"><span class="handle">⠿</span><div class="text-block">
+            <p>DE и PL дают <b>~47%</b> всех событий. Дальше — длинный хвост СНГ (UA, KZ, KG…). Под него стоит отдельно проверить гипотезу по локализации, а не размазывать общий бюджет.</p>
+          </div></div>
+
+          <div class="block"><span class="handle">⠿</span>
+            <div class="w-card" data-cols="signup,revenue">
+              <div class="w-head"><span class="w-title">ARPU по месяцам</span><div class="w-tools"><div class="seg vseg"><button data-v="table">таблица</button><button class="on" data-v="chart">график</button></div><button class="ibtn">⋯</button></div></div>
+              <div class="w-query"><span class="kw">SELECT</span>&nbsp;date_trunc(<span class="str">'month'</span>, signup) <span class="kw">AS</span> m, round(avg(revenue),2) <span class="kw">AS</span> arpu …<span class="car">▾</span></div>
+              <div class="w-body"><div class="w-viz">
+                <div class="w-table hidden"><table class="data"><thead><tr><th>m</th><th>arpu</th></tr></thead><tbody><tr><td>2026-01</td><td class="numv">17.20</td></tr><tr><td>2026-02</td><td class="numv">18.05</td></tr><tr><td>2026-03</td><td class="numv">19.40</td></tr><tr><td>2026-04</td><td class="numv">18.90</td></tr><tr><td>2026-05</td><td class="numv">21.10</td></tr><tr><td>2026-06</td><td class="numv">22.30</td></tr></tbody></table></div>
+                <div class="w-chart"><svg viewBox="0 0 560 190" width="100%" height="190" preserveAspectRatio="xMidYMid meet" font-family="IBM Plex Mono"><g stroke="#1d363b" stroke-width="1"><line x1="36" y1="18" x2="544" y2="18"/><line x1="36" y1="68" x2="544" y2="68"/><line x1="36" y1="118" x2="544" y2="118"/><line x1="36" y1="160" x2="544" y2="160"/></g><g fill="#5C7975" font-size="9.5"><text x="4" y="22">24</text><text x="4" y="122">16</text><text x="4" y="164">12</text></g><polygon fill="#E3A95C14" points="70,124 164,113 258,86 352,96 446,52 524,30 524,160 70,160"/><polyline fill="none" stroke="#E3A95C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="70,124 164,113 258,86 352,96 446,52 524,30"/><g fill="#E3A95C"><circle cx="70" cy="124" r="3.2"/><circle cx="164" cy="113" r="3.2"/><circle cx="258" cy="86" r="3.2"/><circle cx="352" cy="96" r="3.2"/><circle cx="446" cy="52" r="3.2"/><circle cx="524" cy="30" r="3.2"/></g><g fill="#5C7975" font-size="9" text-anchor="middle"><text x="70" y="180">янв</text><text x="164" y="180">фев</text><text x="258" y="180">мар</text><text x="352" y="180">апр</text><text x="446" y="180">май</text><text x="524" y="180">июн</text></g></svg></div>
+              </div></div>
+              <div class="w-cap">Рост с марта, +30% к июню.</div>
+            </div>
+          </div>
+
+          <div class="block"><span class="handle">⠿</span><div class="text-block">
+            <p>ARPU растёт с марта — <b>+30% к июню</b>. По времени совпадает с включением paid-канала. Прежде чем праздновать, надо развести: реально выросла ценность когорты или просто сместился микс каналов. Следующий срез — по каналам.</p>
+          </div></div>
+
+          <div class="block"><span class="handle">⠿</span>
+            <div class="w-card" data-cols="channel,revenue">
+              <div class="w-head"><span class="w-title">Каналы привлечения</span><div class="w-tools"><div class="seg vseg"><button class="on" data-v="table">таблица</button><button data-v="chart">график</button></div><button class="ibtn">⋯</button></div></div>
+              <div class="w-query"><span class="kw">SELECT</span>&nbsp;channel, count(*) <span class="kw">AS</span> users, round(avg(revenue),2) <span class="kw">AS</span> arpu …<span class="car">▾</span></div>
+              <div class="w-body"><div class="w-viz">
+                <div class="w-table"><table class="data"><thead><tr><th>channel</th><th>users</th><th>arpu</th></tr></thead><tbody><tr><td>paid</td><td class="numv">21 300</td><td class="numv">16.40</td></tr><tr><td>organic</td><td class="numv">18 440</td><td class="numv">23.10</td></tr><tr><td>referral</td><td class="numv">6 120</td><td class="numv">19.80</td></tr><tr><td>email</td><td class="numv">2 350</td><td class="numv">21.05</td></tr></tbody></table></div>
+                <div class="w-chart hidden"><div class="barchart">
+                  <div class="bc-row"><span class="lbl">paid</span><div class="bc-track"><div class="bc-fill" style="width:100%"></div></div><span class="val">21 300</span></div>
+                  <div class="bc-row"><span class="lbl">organic</span><div class="bc-track"><div class="bc-fill" style="width:87%"></div></div><span class="val">18 440</span></div>
+                  <div class="bc-row"><span class="lbl">referral</span><div class="bc-track"><div class="bc-fill" style="width:29%"></div></div><span class="val">6 120</span></div>
+                  <div class="bc-row"><span class="lbl">email</span><div class="bc-track"><div class="bc-fill" style="width:11%"></div></div><span class="val">2 350</span></div>
+                </div></div>
+              </div></div>
+              <div class="w-cap">paid даёт объём, но arpu ниже organic — гипотеза подтверждается частично.</div>
+            </div>
+          </div>
+
+          <div class="addrow">
+            <button class="addbtn">+ текст</button>
+            <button class="addbtn" id="addQuery">+ запрос</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="toast" id="toast"><span class="tk">✓</span> закреплено в отчёт</div>
+</div>
+
+<script>
+  const QUERIES={q1:{uses:['country'],scanned:1,bytes:'38 KB',rows:12,ms:5.8},q2:{uses:['signup','revenue'],scanned:2,bytes:'71 KB',rows:6,ms:7.9}};
+  let mode='explore', activeQ='q1', activeView='table';
+  const scols=document.querySelectorAll('.scol[data-col]');
+
+  function highlight(cols){
+    const used=new Set((cols||[]));
+    scols.forEach(r=>{const c=r.dataset.col;r.classList.toggle('used',used.has(c));r.classList.toggle('pruned',used.size>0&&!used.has(c));});
+  }
+
+  /* ---- mode switch ---- */
+  function setMode(m){
+    mode=m;
+    document.querySelectorAll('.modeseg button').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+    document.getElementById('explore').classList.toggle('hidden',m!=='explore');
+    document.getElementById('report').classList.toggle('hidden',m!=='report');
+    document.getElementById('ctxt').textContent = m==='explore' ? 'events.csv · рабочий стол' : 'отчёт · воронка по странам · черновик';
+    document.getElementById('railnote').textContent = m==='explore'
+      ? '◗ подсвечены колонки, которые читает текущий запрос'
+      : '◗ подсвечены колонки активного блока отчёта';
+    if(m==='explore'){ highlight(QUERIES[activeQ].uses); }
+    else{ const a=document.querySelector('.w-card.active'); highlight(a?a.dataset.cols.split(','):[]); }
+  }
+  document.querySelectorAll('.modeseg button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+
+  /* ---- explore: query + result tabs ---- */
+  function renderExplore(){
+    document.querySelectorAll('.qtab').forEach(t=>t.classList.toggle('on',t.dataset.q===activeQ));
+    document.querySelectorAll('.code[data-q]').forEach(c=>c.classList.toggle('hidden',c.dataset.q!==activeQ));
+    document.querySelectorAll('#rtabs button').forEach(b=>b.classList.toggle('on',b.dataset.view===activeView));
+    const prof=document.querySelector('.view-profile'), blocks=document.querySelectorAll('.result-block[data-q]');
+    if(activeView==='profile'){prof.classList.remove('hidden');blocks.forEach(b=>b.classList.add('hidden'));}
+    else{prof.classList.add('hidden');blocks.forEach(b=>{const on=b.dataset.q===activeQ;b.classList.toggle('hidden',!on);if(on){b.querySelector('.view-table').classList.toggle('hidden',activeView!=='table');b.querySelector('.view-chart').classList.toggle('hidden',activeView!=='chart');}});}
+    const Q=QUERIES[activeQ];
+    document.getElementById('scanStat').textContent=`${Q.scanned} / 7 колонок прочитано · ${Q.bytes}`;
+    document.getElementById('rmeta').innerHTML=`<b>${Q.rows}</b> строк · ${Q.ms} мс`;
+    if(mode==='explore') highlight(Q.uses);
+  }
+  document.querySelectorAll('.qtab').forEach(t=>t.addEventListener('click',()=>{activeQ=t.dataset.q;renderExplore();}));
+  document.querySelectorAll('#rtabs button').forEach(b=>b.addEventListener('click',()=>{activeView=b.dataset.view;renderExplore();}));
+  document.getElementById('runBtn').addEventListener('click',e=>{const b=e.currentTarget;b.style.filter='brightness(1.3)';setTimeout(()=>b.style.filter='',140);if(activeView==='profile'){activeView='table';renderExplore();}});
+
+  /* ---- pin to report ---- */
+  const badge=document.getElementById('repBadge'), toast=document.getElementById('toast');
+  document.getElementById('pinBtn').addEventListener('click',()=>{
+    badge.textContent=(+badge.textContent+1);
+    badge.classList.add('bump');setTimeout(()=>badge.classList.remove('bump'),220);
+    toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1700);
+  });
+
+  /* ---- report: widget focus + viz toggle ---- */
+  document.querySelectorAll('.w-card[data-cols]').forEach(card=>{
+    card.addEventListener('click',()=>{document.querySelectorAll('.w-card').forEach(c=>c.classList.toggle('active',c===card));if(mode==='report')highlight(card.dataset.cols.split(','));});
+  });
+  document.querySelectorAll('.vseg').forEach(seg=>{
+    seg.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',e=>{
+      e.stopPropagation();const v=btn.dataset.v;seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===btn));
+      const card=btn.closest('.w-card');card.querySelectorAll('.w-table').forEach(t=>t.classList.toggle('hidden',v!=='table'));card.querySelectorAll('.w-chart').forEach(t=>t.classList.toggle('hidden',v!=='chart'));
+    }));
+  });
+  document.getElementById('addQuery').addEventListener('click',()=>setMode('explore'));
+
+  /* init */
+  renderExplore(); setMode('explore');
+</script>
+</body>
+</html>
