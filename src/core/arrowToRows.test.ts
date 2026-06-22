@@ -1,6 +1,6 @@
 import { tableFromArrays } from 'apache-arrow'
 import { describe, expect, it } from 'vitest'
-import { arrowToRows } from './arrowToRows'
+import { arrowToRows, dedupeColumnNames } from './arrowToRows'
 
 describe('arrowToRows', () => {
   it('extracts column names and row objects from an Arrow table', () => {
@@ -24,5 +24,19 @@ describe('arrowToRows', () => {
     // 'Dictionary<Int32, Utf8>' (dictionary-encoded). Plan permitted adjusting
     // this literal to the actual String(f.type) value.
     expect(result.columns[0]).toEqual({ name: 'country', type: 'Dictionary<Int32, Utf8>' })
+  })
+})
+
+describe('dedupeColumnNames', () => {
+  it('leaves unique names untouched', () => {
+    expect(dedupeColumnNames(['a', 'b', 'c'])).toEqual(['a', 'b', 'c'])
+  })
+  it('suffixes repeats in order', () => {
+    expect(dedupeColumnNames(['id', 'id', 'x', 'id'])).toEqual([
+      'id',
+      'id_1',
+      'x',
+      'id_2',
+    ])
   })
 })
