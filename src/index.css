@@ -150,3 +150,7 @@ table.data th {
 }
 .tab-close:hover { color: #e8826a; }
 .tab-add { border: 1px solid #1d363b; background: #11262a; }
+.schema-col { opacity: .45; }
+.schema-col.used { opacity: 1; }
+.schema-col.used .col-name { color: #e9eeea; }
+.rail-note { color: #5c7975; font-size: 11px; margin-top: 10px; line-height: 1.4; }

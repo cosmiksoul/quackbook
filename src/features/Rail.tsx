@@ -1,4 +1,5 @@
 import { useSession } from '../state/session'
+import { detectUsedColumns } from '../core/pruning'
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`
@@ -15,6 +16,16 @@ export function Rail() {
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null
   const schemaTable = activeTab?.datasetTable ?? datasets[0]?.table ?? null
   const schemaDataset = datasets.find((d) => d.table === schemaTable) ?? null
+
+  const used =
+    schemaDataset && activeTab
+      ? new Set(
+          detectUsedColumns(
+            activeTab.sql,
+            schemaDataset.columns.map((c) => c.name),
+          ),
+        )
+      : new Set<string>()
 
   return (
     <aside className="rail">
@@ -46,12 +57,19 @@ export function Rail() {
           </div>
           <ul className="schema">
             {schemaDataset.columns.map((c) => (
-              <li className="schema-col" key={c.name}>
+              <li
+                className={used.has(c.name) ? 'schema-col used' : 'schema-col'}
+                key={c.name}
+              >
                 <span className="col-name">{c.name}</span>
                 <span className="col-type">{c.type}</span>
               </li>
             ))}
           </ul>
+          <p className="rail-note">
+            ▸ подсвечены колонки, которые читает текущий запрос (
+            {used.size} / {schemaDataset.columns.length})
+          </p>
         </>
       )}
     </aside>
