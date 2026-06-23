@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildHistogramQuery,
   buildNullCountQuery,
   buildTopValuesQuery,
   classifyColumn,
+  interpretHistogram,
   interpretNullCounts,
   interpretTopValues,
   parseSummarize,
@@ -146,5 +148,40 @@ describe('interpretTopValues', () => {
   })
   it('returns [] for an empty result (empty table)', () => {
     expect(interpretTopValues([])).toEqual([])
+  })
+})
+
+describe('buildHistogramQuery', () => {
+  it('equi-width floor bucketing with least() clamp, quoted ident', () => {
+    expect(buildHistogramQuery('events', 'rev', 0, 300, 12)).toBe(
+      'SELECT least(12 - 1, floor(("rev" - 0) / ((300 - 0) / 12)))::INT AS bucket, count(*) AS n ' +
+        'FROM "events" WHERE "rev" IS NOT NULL GROUP BY bucket ORDER BY bucket',
+    )
+  })
+  it('returns null for a degenerate range (hi == lo) -> histogram omitted', () => {
+    expect(buildHistogramQuery('events', 'rev', 5, 5, 12)).toBeNull()
+  })
+})
+
+describe('interpretHistogram', () => {
+  it('fills empty buckets with zero and computes each bin lo/hi', () => {
+    // rows for buckets 0 and 2 only; lo=0, hi=300, bins=3 -> width 100.
+    const rows = [
+      { bucket: 0, n: 10n },
+      { bucket: 2, n: 4n },
+    ]
+    expect(interpretHistogram(rows, 0, 300, 3)).toEqual([
+      { lo: 0, hi: 100, count: 10 },
+      { lo: 100, hi: 200, count: 0 },
+      { lo: 200, hi: 300, count: 4 },
+    ])
+  })
+  it('clamps an overflow bucket index into the last bin (least() guards SQL too)', () => {
+    const rows = [{ bucket: 3, n: 2n }] // bins=3 -> only 0..2 valid; 3 -> last bin
+    expect(interpretHistogram(rows, 0, 300, 3)).toEqual([
+      { lo: 0, hi: 100, count: 0 },
+      { lo: 100, hi: 200, count: 0 },
+      { lo: 200, hi: 300, count: 2 },
+    ])
   })
 })

@@ -149,3 +149,50 @@ export function interpretTopValues(rows: Record<string, unknown>[]): TopValue[] 
     frac: maxCount > 0 ? counts[i] / maxCount : 0,
   }))
 }
+
+/**
+ * Build a manual equi-width histogram query (width_bucket/histogram(col,N) are
+ * absent in this build): bucket = least(BINS-1, floor((c - lo)/((hi-lo)/BINS))).
+ * Returns null for a degenerate range (hi == lo) — the caller omits the
+ * histogram and shows only min/median/max. Idents quoted; lo/hi are numbers.
+ */
+export function buildHistogramQuery(
+  table: string,
+  col: string,
+  lo: number,
+  hi: number,
+  bins: number,
+): string | null {
+  if (hi === lo) return null
+  const c = quoteIdent(col)
+  return (
+    `SELECT least(${bins} - 1, floor((${c} - ${lo}) / ((${hi} - ${lo}) / ${bins})))::INT AS bucket, ` +
+    `count(*) AS n FROM ${quoteIdent(table)} WHERE ${c} IS NOT NULL GROUP BY bucket ORDER BY bucket`
+  )
+}
+
+/**
+ * Turn sparse {bucket, n} rows into a dense bins-long HistogramBin[]: empty
+ * buckets get count 0, each bin's lo/hi are computed from the equi-width step.
+ * Bucket indices are clamped into [0, bins-1] (the SQL least() already does this).
+ */
+export function interpretHistogram(
+  rows: Record<string, unknown>[],
+  lo: number,
+  hi: number,
+  bins: number,
+): HistogramBin[] {
+  const width = (hi - lo) / bins
+  const counts = new Array<number>(bins).fill(0)
+  for (const r of rows) {
+    let b = Number(r.bucket ?? 0)
+    if (b < 0) b = 0
+    if (b > bins - 1) b = bins - 1
+    counts[b] += Number(r.n ?? 0)
+  }
+  return counts.map((count, i) => ({
+    lo: lo + i * width,
+    hi: lo + (i + 1) * width,
+    count,
+  }))
+}
