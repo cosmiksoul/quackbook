@@ -1,3 +1,5 @@
+import type { QueryResult } from './arrowToRows'
+
 /** How a column is profiled (drives which card body renders). */
 export type ColumnKind = 'numeric' | 'categorical' | 'range' | 'highCardinality'
 
@@ -63,4 +65,36 @@ export function classifyColumn(
     return approxUnique <= threshold ? 'categorical' : 'highCardinality'
   }
   return 'highCardinality'
+}
+
+/** One column's raw SUMMARIZE facts (stats kept as strings, count as Number). */
+export interface SummarizeColumn {
+  name: string
+  type: string
+  approxUnique: number
+  min: string | null
+  max: string | null
+  median: string | null // SUMMARIZE q50
+}
+
+/** Coerce a possibly-null SUMMARIZE stat cell to a trimmed string or null. */
+function toStatString(v: unknown): string | null {
+  return v == null ? null : String(v)
+}
+
+/**
+ * Parse a SUMMARIZE result into per-column facts. approx_unique is Int64
+ * (BigInt) -> Number; min/max/q50 stay strings (heterogeneous columns).
+ * null_percentage (Decimal) is intentionally NOT read — it decodes wrong via
+ * arrowToRows; null counts come from a separate clean pass (buildNullCountQuery).
+ */
+export function parseSummarize(result: QueryResult): SummarizeColumn[] {
+  return result.rows.map((r) => ({
+    name: String(r.column_name),
+    type: String(r.column_type),
+    approxUnique: Number(r.approx_unique ?? 0),
+    min: toStatString(r.min),
+    max: toStatString(r.max),
+    median: toStatString(r.q50),
+  }))
 }
