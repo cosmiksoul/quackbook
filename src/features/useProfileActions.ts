@@ -13,7 +13,7 @@ import {
   THRESHOLD_DISTINCT,
   TOP_K,
 } from '../core/profile'
-import { quoteIdent } from '../core/sql'
+import { buildResultTempDDL, quoteIdent, resultTempName } from '../core/sql'
 import type { DuckDBClient } from '../db/duckdbClient'
 import { useSession } from '../state/session'
 
@@ -110,5 +110,22 @@ export function useProfileActions(client: DuckDBClient) {
     }
   }
 
-  return { profile }
+  async function profileResult(tabId: string, sql: string): Promise<void> {
+    const st = useSession.getState()
+    const tab = st.tabs.find((t) => t.id === tabId)
+    if (!tab || tab.resultProfile) return // cached -> no-op
+    if (!sql.trim()) return // nothing to materialize
+    st.setResultProfiling(tabId, true)
+    try {
+      // materialize the query once into a regular (catalog-global) internal
+      // table with DuckDB's real inferred types, then reuse profileRelation.
+      await client.exec(buildResultTempDDL(tabId, sql))
+      const { profiles, rowCount } = await profileRelation(client, resultTempName(tabId))
+      useSession.getState().setResultProfile(tabId, profiles, rowCount)
+    } catch (e) {
+      useSession.getState().setResultProfileError(tabId, String(e))
+    }
+  }
+
+  return { profile, profileResult }
 }
