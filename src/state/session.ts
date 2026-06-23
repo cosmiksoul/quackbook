@@ -157,10 +157,15 @@ export const useSession = create<SessionState>((set) => ({
     set((s) => ({
       datasets: s.datasets.map((d) => {
         if (d.table !== table) return d
-        const suggested = d.suggested?.find((c) => c.name === origName)
-        const restored: ColumnConfig = suggested
-          ? { origName, name: origName, type: suggested.type, include: true }
-          : { origName, name: origName, type: 'VARCHAR', include: true }
+        // Reset == untype this column to the raw VARCHAR baseline (the header
+        // «сброс», scoped to one column): original name, VARCHAR, included,
+        // no format/sep/token.
+        const restored: ColumnConfig = {
+          origName,
+          name: origName,
+          type: 'VARCHAR',
+          include: true,
+        }
         return {
           ...d,
           dirty: true,

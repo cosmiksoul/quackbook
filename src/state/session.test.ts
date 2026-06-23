@@ -189,17 +189,25 @@ describe('session: schema config — setColumnConfig / stageColumn (M2)', () => 
 })
 
 describe('session: schema config — resetColumn / setApplied (M2)', () => {
-  it('resetColumn returns a column to its suggested config and marks dirty', () => {
+  it('resetColumn returns a column to the raw VARCHAR baseline and marks dirty', () => {
     useSession.getState().reset()
     const s = useSession.getState()
     s.addDataset(csvDs('events'))
-    s.stageColumn('events', { origName: 'rev', name: 'x', type: 'VARCHAR', include: false })
+    s.stageColumn('events', {
+      origName: 'rev',
+      name: 'x',
+      type: 'DOUBLE',
+      include: false,
+      decimalSep: ',',
+    })
     s.resetColumn('events', 'rev')
     const d = useSession.getState().datasets[0]
+    // reset == untype this column to the raw baseline (same as the header «сброс»,
+    // scoped to one column): original name, VARCHAR, included, no format/sep/token.
     expect(d.schemaConfig?.find((c) => c.origName === 'rev')).toEqual({
       origName: 'rev',
       name: 'rev',
-      type: 'DOUBLE',
+      type: 'VARCHAR',
       include: true,
     })
     expect(d.dirty).toBe(true)
