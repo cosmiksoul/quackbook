@@ -181,3 +181,7 @@ body {
   border: 0; background: transparent; color: #8da6a2; cursor: pointer;
   font-size: 12px; text-decoration: underline;
 }
+.schema-actions { display: inline-flex; gap: 6px; }
+.schema-btn.apply { background: #e3a95c; color: #15201a; border-color: #e3a95c; font-weight: 600; }
+.schema-btn.apply:hover { background: #efb86c; }
+.schema-btn.apply:disabled { background: #5a4a30; border-color: #5a4a30; }

@@ -16,7 +16,7 @@ export function Rail({ client }: { client: DuckDBClient }) {
   const tabs = useSession((s) => s.tabs)
   const activeTabId = useSession((s) => s.activeTabId)
   const openOrFocusTab = useSession((s) => s.openOrFocusTab)
-  const { applyInferred } = useSchemaActions(client)
+  const { applyInferred, apply } = useSchemaActions(client)
   const stageColumn = useSession((s) => s.stageColumn)
   const resetColumn = useSession((s) => s.resetColumn)
   const [editing, setEditing] = useState<{ table: string; origName: string } | null>(null)
@@ -75,6 +75,8 @@ export function Rail({ client }: { client: DuckDBClient }) {
             : [],
         )
         const canType = ds.kind === 'csv' && (ds.suggested?.length ?? 0) > 0
+        const hasIncluded =
+          (ds.schemaConfig?.filter((c) => c.include).length ?? 0) > 0
         return (
           <div className="schema-block" key={ds.table}>
             <div className="rail-section-label schema-head">
@@ -84,15 +86,31 @@ export function Rail({ client }: { client: DuckDBClient }) {
                   {used.size}/{ds.columns.length}
                 </span>
               </span>
-              {canType && (
-                <button
-                  className="schema-btn"
-                  onClick={() => void applyInferred(ds.table)}
-                  title="применить предложенные типы одним кликом"
-                >
-                  типы
-                </button>
-              )}
+              <span className="schema-actions">
+                {ds.dirty && (
+                  <button
+                    className="schema-btn apply"
+                    disabled={!hasIncluded}
+                    onClick={() => void apply(ds.table)}
+                    title={
+                      hasIncluded
+                        ? 'ре-материализовать таблицу из текущей конфигурации'
+                        : 'нужна хотя бы одна включённая колонка'
+                    }
+                  >
+                    применить
+                  </button>
+                )}
+                {canType && (
+                  <button
+                    className="schema-btn"
+                    onClick={() => void applyInferred(ds.table)}
+                    title="применить предложенные типы одним кликом"
+                  >
+                    типы
+                  </button>
+                )}
+              </span>
             </div>
             {ds.schemaError && (
               <div className="schema-error" role="alert">
