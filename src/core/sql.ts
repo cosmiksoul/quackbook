@@ -63,9 +63,12 @@ export function rawTableName(table: string): string {
   return `${RAW_PREFIX}${table}`
 }
 
+/** Internal prefix for a per-tab materialized result table (M3). */
+const RESULT_PREFIX = '_qb_result_'
+
 /** True for tables quackbook owns internally (filtered from sources/schema). */
 export function isInternalTable(name: string): boolean {
-  return name.startsWith(RAW_PREFIX)
+  return name.startsWith(RAW_PREFIX) || name.startsWith(RESULT_PREFIX)
 }
 
 /** DDL: materialize a registered CSV as the immutable all-VARCHAR raw table. */
@@ -81,4 +84,24 @@ export function buildSniffCsv(virtualFile: string): string {
 /** DDL: (re)create `dest` as a verbatim SELECT * copy of `src` (both quoted). */
 export function buildCloneTable(dest: string, src: string): string {
   return `CREATE OR REPLACE TABLE ${quoteIdent(dest)} AS SELECT * FROM ${quoteIdent(src)}`
+}
+
+/** Internal name of the materialized result table for a tab. */
+export function resultTempName(tabId: string): string {
+  return `${RESULT_PREFIX}${tabId}`
+}
+
+/**
+ * DDL: materialize a tab's query result into a REGULAR (catalog-global) internal
+ * table so it can be profiled by name (reusing profileRelation). NOT a TEMP
+ * table: DuckDBClient opens a fresh connection per call and a TEMP table is
+ * connection-local, so SUMMARIZE on the next connection would not see it. A
+ * regular CREATE OR REPLACE TABLE survives across connections (same mechanism as
+ * _qb_raw_*) and is overwritten per tab. The table inherits DuckDB's real
+ * inferred types. A trailing `;` (and surrounding whitespace) is stripped — a
+ * CREATE ... AS <select>; with the semicolon inside would be invalid.
+ */
+export function buildResultTempDDL(tabId: string, sql: string): string {
+  const select = sql.trim().replace(/;\s*$/, '').trim()
+  return `CREATE OR REPLACE TABLE ${quoteIdent(resultTempName(tabId))} AS ${select}`
 }

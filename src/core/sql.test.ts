@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildCloneTable, buildDescribe, buildDropTable, buildLoadCsv, buildLoadCsvRaw, buildLoadParquet, buildSelectAll, buildSelectStar, buildSniffCsv, isInternalTable, quoteIdent, quoteLiteral, rawTableName, tableNameFromFilename, uniqueTableName } from './sql'
+import { buildCloneTable, buildDescribe, buildDropTable, buildLoadCsv, buildLoadCsvRaw, buildLoadParquet, buildResultTempDDL, buildSelectAll, buildSelectStar, buildSniffCsv, isInternalTable, quoteIdent, quoteLiteral, rawTableName, resultTempName, tableNameFromFilename, uniqueTableName } from './sql'
 
 describe('quoteIdent', () => {
   it('double-quotes an identifier', () => {
@@ -133,6 +133,34 @@ describe('buildCloneTable', () => {
   it('clones a source table into a fresh dest table (quoted idents)', () => {
     expect(buildCloneTable('events', '_qb_raw_events')).toBe(
       'CREATE OR REPLACE TABLE "events" AS SELECT * FROM "_qb_raw_events"',
+    )
+  })
+})
+
+describe('resultTempName', () => {
+  it('prefixes the internal per-tab result table name', () => {
+    expect(resultTempName('tab-3')).toBe('_qb_result_tab-3')
+  })
+})
+
+describe('isInternalTable (result tables)', () => {
+  it('flags result tables as internal too', () => {
+    expect(isInternalTable('_qb_result_tab-3')).toBe(true)
+  })
+  it('still treats user tables as not internal', () => {
+    expect(isInternalTable('result_x')).toBe(false)
+  })
+})
+
+describe('buildResultTempDDL', () => {
+  it('CREATE OR REPLACE TABLE (catalog-global, NOT TEMP) from the (trailing-; stripped) select', () => {
+    expect(buildResultTempDDL('tab-3', 'SELECT 1')).toBe(
+      'CREATE OR REPLACE TABLE "_qb_result_tab-3" AS SELECT 1',
+    )
+  })
+  it('strips a trailing semicolon and surrounding whitespace from the select', () => {
+    expect(buildResultTempDDL('tab-3', '  SELECT a FROM t ;  \n')).toBe(
+      'CREATE OR REPLACE TABLE "_qb_result_tab-3" AS SELECT a FROM t',
     )
   })
 })
