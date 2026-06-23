@@ -1,6 +1,6 @@
 import { useSession } from '../state/session'
 import type { DuckDBClient } from '../db/duckdbClient'
-import { buildDropTable } from '../core/sql'
+import { buildDropTable, rawTableName } from '../core/sql'
 import { CsvDropzone } from '../components/CsvDropzone'
 import { loadOneFile } from './loadFiles'
 import { Explore } from './Explore'
@@ -32,6 +32,9 @@ export function Shell({ client }: { client: DuckDBClient }) {
     for (const d of useSession.getState().datasets) {
       try {
         await client.query(buildDropTable(d.table))
+        if (d.kind === 'csv') {
+          await client.query(buildDropTable(rawTableName(d.table)))
+        }
       } catch {
         // ignore — table may already be gone
       }
