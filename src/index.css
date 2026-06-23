@@ -75,9 +75,12 @@ body {
   color: #5c7975; font-size: 13px; padding: 10px 8px;
 }
 .schema { list-style: none; padding: 0; margin: 0; }
+.schema-block { margin-bottom: 4px; }
+.schema-count { color: #e3a95c; font-weight: 600; }
 .schema-col {
   display: flex; justify-content: space-between; gap: 8px;
-  padding: 5px 8px; font-size: 12.5px; font-family: ui-monospace, monospace;
+  padding: 5px 8px 5px 6px; font-size: 12.5px; font-family: ui-monospace, monospace;
+  border-left: 2px solid transparent; opacity: .4;
 }
 .col-name { color: #c8d6d2; }
 .col-type { color: #5c7975; font-size: 10.5px; }
@@ -124,9 +127,8 @@ body {
 }
 .tab-close:hover { color: #e8826a; }
 .tab-add { border: 1px solid #1d363b; background: #11262a; }
-.schema-col { opacity: .45; }
-.schema-col.used { opacity: 1; }
-.schema-col.used .col-name { color: #e9eeea; }
+.schema-col.used { opacity: 1; border-left-color: #e3a95c; background: #11262a; }
+.schema-col.used .col-name { color: #e9eeea; font-weight: 600; }
 .rail-note { color: #5c7975; font-size: 11px; margin-top: 10px; line-height: 1.4; }
 .view-toggle { display: flex; gap: 2px; background: #11262a; border-radius: 7px; padding: 3px; }
 .view-toggle button {

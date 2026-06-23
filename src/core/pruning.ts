@@ -23,3 +23,16 @@ export function detectUsedColumns(sql: string, columns: string[]): string[] {
   )
   return columns.filter((c) => tokens.has(c.toLowerCase()))
 }
+
+/**
+ * Heuristic: which of `tableNames` does `sql` reference? Whole identifier-token
+ * match (case-insensitive); preserves the order of `tableNames`, not the SQL.
+ * Powers the rail showing the schema of every table a query touches.
+ */
+export function detectReferencedTables(
+  sql: string,
+  tableNames: string[],
+): string[] {
+  const tokens = new Set(sql.toLowerCase().match(/[a-z_][a-z0-9_]*/g) ?? [])
+  return tableNames.filter((t) => tokens.has(t.toLowerCase()))
+}

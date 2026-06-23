@@ -1,5 +1,5 @@
-import { useSession } from '../state/session'
-import { detectUsedColumns } from '../core/pruning'
+import { useSession, type Dataset } from '../state/session'
+import { detectReferencedTables, detectUsedColumns } from '../core/pruning'
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`
@@ -14,18 +14,27 @@ export function Rail() {
   const openOrFocusTab = useSession((s) => s.openOrFocusTab)
 
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null
-  const schemaTable = activeTab?.datasetTable ?? datasets[0]?.table ?? null
-  const schemaDataset = datasets.find((d) => d.table === schemaTable) ?? null
 
-  const used =
-    schemaDataset && activeTab
-      ? new Set(
-          detectUsedColumns(
-            activeTab.sql,
-            schemaDataset.columns.map((c) => c.name),
-          ),
+  // The rail follows the active query: show the schema of every table it
+  // references (a JOIN/UNION => several sections). Before a table is named
+  // (blank/empty tab) fall back to the tab's own dataset, else the first
+  // source, so the rail isn't empty.
+  const referenced = activeTab
+    ? detectReferencedTables(
+        activeTab.sql,
+        datasets.map((d) => d.table),
+      )
+    : []
+  const shownTables =
+    referenced.length > 0
+      ? referenced
+      : [activeTab?.datasetTable ?? datasets[0]?.table].filter(
+          (t): t is string => t != null,
         )
-      : new Set<string>()
+  const shownDatasets = shownTables
+    .map((t) => datasets.find((d) => d.table === t))
+    .filter((d): d is Dataset => d != null)
+  const shown = new Set(shownDatasets.map((d) => d.table))
 
   return (
     <aside className="rail">
@@ -34,9 +43,7 @@ export function Rail() {
         {datasets.map((d) => (
           <li key={d.table}>
             <button
-              className={
-                d.table === schemaTable ? 'source active' : 'source'
-              }
+              className={shown.has(d.table) ? 'source active' : 'source'}
               onClick={() => openOrFocusTab(d.table)}
             >
               <span className="source-kind">{d.kind === 'csv' ? 'csv' : 'pq'}</span>
@@ -50,27 +57,39 @@ export function Rail() {
         )}
       </ul>
 
-      {schemaDataset && (
-        <>
-          <div className="rail-section-label">
-            Схема · {schemaDataset.fileName}
+      {shownDatasets.map((ds) => {
+        const used = new Set(
+          activeTab
+            ? detectUsedColumns(
+                activeTab.sql,
+                ds.columns.map((c) => c.name),
+              )
+            : [],
+        )
+        return (
+          <div className="schema-block" key={ds.table}>
+            <div className="rail-section-label">
+              Схема · {ds.fileName}{' '}
+              <span className="schema-count">
+                {used.size}/{ds.columns.length}
+              </span>
+            </div>
+            <ul className="schema">
+              {ds.columns.map((c) => (
+                <li
+                  className={used.has(c.name) ? 'schema-col used' : 'schema-col'}
+                  key={c.name}
+                >
+                  <span className="col-name">{c.name}</span>
+                  <span className="col-type">{c.type}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="schema">
-            {schemaDataset.columns.map((c) => (
-              <li
-                className={used.has(c.name) ? 'schema-col used' : 'schema-col'}
-                key={c.name}
-              >
-                <span className="col-name">{c.name}</span>
-                <span className="col-type">{c.type}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="rail-note">
-            ▸ подсвечены колонки, которые читает текущий запрос (
-            {used.size} / {schemaDataset.columns.length})
-          </p>
-        </>
+        )
+      })}
+      {shownDatasets.length > 0 && (
+        <p className="rail-note">▸ подсвечены колонки, которые читает запрос</p>
       )}
     </aside>
   )
