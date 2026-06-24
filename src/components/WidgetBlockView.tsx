@@ -23,6 +23,18 @@ export function WidgetBlockView({ block, client }: Props) {
   const moveBlock = useSession((s) => s.moveBlock)
   const removeBlock = useSession((s) => s.removeBlock)
 
+  // datasets is a separate store slice, so the rerun effect must ALSO depend on
+  // the loaded subset of this widget's sources. Otherwise, after a reload the
+  // re-dropped source (addDataset) wouldn't retrigger the query and the widget
+  // would stay stuck on its missing-table error (the headline rehydration flow).
+  const loadedKey = useSession((s) =>
+    s.datasets
+      .map((d) => d.table)
+      .filter((t) => block.datasetNames.includes(t))
+      .sort()
+      .join('|'),
+  )
+
   const [state, setState] = useState<WidgetState>({ kind: 'loading' })
   const [sqlOpen, setSqlOpen] = useState(false)
 
@@ -44,7 +56,7 @@ export function WidgetBlockView({ block, client }: Props) {
     return () => {
       cancelled = true
     }
-  }, [block.sql, client])
+  }, [block.sql, client, loadedKey])
 
   const result = state.kind === 'ok' ? state.result : null
   const error = state.kind === 'error' ? state.message : null
@@ -78,7 +90,13 @@ export function WidgetBlockView({ block, client }: Props) {
           <button onClick={() => moveBlock(block.id, 'down')} title="вниз">
             ↓
           </button>
-          <button onClick={() => removeBlock(block.id)} title="удалить">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              removeBlock(block.id)
+            }}
+            title="удалить"
+          >
             ✕
           </button>
         </span>
@@ -116,7 +134,7 @@ export function WidgetBlockView({ block, client }: Props) {
       {!error && !loading && showChart && (
         <Chart spec={spec!} rows={result!.rows} />
       )}
-      {!error && !loading && result && !showChart && (
+      {!error && !loading && result && block.vizType === 'table' && (
         <ResultGrid result={result} />
       )}
       {/*

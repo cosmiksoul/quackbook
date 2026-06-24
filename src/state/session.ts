@@ -433,7 +433,10 @@ if (persisted) useSession.getState().loadReport(persisted)
 useSession.subscribe((s, prev) => {
   if (s.report !== prev.report && typeof localStorage !== 'undefined') {
     try {
-      localStorage.setItem(REPORT_KEY, serializeReport(s.report))
+      // An empty report removes the key (so reset() / clearing the last block
+      // truly leaves no persisted structure, not an empty doc echoed back).
+      if (s.report.blocks.length === 0) localStorage.removeItem(REPORT_KEY)
+      else localStorage.setItem(REPORT_KEY, serializeReport(s.report))
     } catch {
       // ignore — storage may be full / unavailable
     }
