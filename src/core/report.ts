@@ -74,3 +74,16 @@ export function deserializeReport(json: string): ReportDoc {
   if (!Array.isArray(obj.blocks)) throw new Error('malformed report')
   return { version: 1, blocks: obj.blocks.map(validateBlock) }
 }
+
+/**
+ * The set of dataset tables every WIDGET block depends on, deduped + sorted
+ * ascending. Text blocks contribute nothing. Drives the rehydration banner
+ * (which sources the report needs vs which are loaded).
+ */
+export function neededDatasets(doc: ReportDoc): string[] {
+  const all = new Set<string>()
+  for (const b of doc.blocks) {
+    if (b.type === 'widget') for (const t of b.datasetNames) all.add(t)
+  }
+  return [...all].sort()
+}

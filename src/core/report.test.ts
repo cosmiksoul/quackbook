@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   serializeReport,
   deserializeReport,
+  neededDatasets,
   type ReportDoc,
 } from './report'
 
@@ -81,5 +82,46 @@ describe('serializeReport / deserializeReport', () => {
     // dropped (not merely ignored). Assert it explicitly — toMatchObject is a
     // subset check and would pass even if `note` survived.
     expect(Object.keys(doc.blocks[0])).not.toContain('note')
+  })
+})
+
+describe('neededDatasets', () => {
+  const widget = (
+    id: string,
+    datasetNames: string[],
+  ): import('./report').WidgetBlock => ({
+    type: 'widget',
+    id,
+    title: id,
+    sql: 'SELECT 1',
+    datasetNames,
+    vizType: 'table',
+    caption: '',
+  })
+
+  it('empty doc -> []', () => {
+    expect(neededDatasets({ version: 1, blocks: [] })).toEqual([])
+  })
+
+  it('text-only doc -> []', () => {
+    expect(
+      neededDatasets({
+        version: 1,
+        blocks: [{ type: 'text', id: 'blk-1', markdown: 'hi' }],
+      }),
+    ).toEqual([])
+  })
+
+  it('unions overlapping datasetNames, deduped + sorted', () => {
+    expect(
+      neededDatasets({
+        version: 1,
+        blocks: [
+          widget('blk-1', ['events', 'users']),
+          { type: 'text', id: 'blk-2', markdown: 'note' },
+          widget('blk-3', ['users', 'orders']),
+        ],
+      }),
+    ).toEqual(['events', 'orders', 'users'])
   })
 })
