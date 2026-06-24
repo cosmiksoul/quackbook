@@ -3,6 +3,7 @@ import type { QueryResult } from '../core/arrowToRows'
 import type { ColumnConfig } from '../core/schemaTypes'
 import type { ColumnProfile } from '../core/profile'
 import { buildSelectStar } from '../core/sql'
+import type { ReportDoc, WidgetBlock } from '../core/report'
 
 export interface Dataset {
   table: string
@@ -51,6 +52,8 @@ interface SessionState {
   exploreView: 'table' | 'chart' | 'profile'
   profileTarget: ProfileTarget
   seq: number // deterministic id counter (no Math.random/Date.now)
+  report: ReportDoc
+  activeBlockId: string | null
   // actions
   addDataset: (dataset: Dataset) => void
   setMode: (mode: 'explore' | 'report') => void
@@ -79,6 +82,16 @@ interface SessionState {
   setResultProfileError: (tabId: string, message: string | null) => void
   setExploreView: (view: 'table' | 'chart' | 'profile') => void
   setProfileTarget: (target: ProfileTarget) => void
+  pinResult: (fields: Omit<WidgetBlock, 'type' | 'id'>) => void
+  addTextBlock: () => void
+  updateTextBlock: (id: string, markdown: string) => void
+  updateWidgetTitle: (id: string, title: string) => void
+  updateWidgetCaption: (id: string, caption: string) => void
+  setWidgetVizType: (id: string, vizType: 'table' | 'chart') => void
+  moveBlock: (id: string, dir: 'up' | 'down') => void
+  removeBlock: (id: string) => void
+  setActiveBlock: (id: string | null) => void
+  loadReport: (doc: ReportDoc) => void
 }
 
 const initial = {
@@ -89,6 +102,8 @@ const initial = {
   exploreView: 'table' as const,
   profileTarget: null as ProfileTarget,
   seq: 0,
+  report: { version: 1, blocks: [] } as ReportDoc,
+  activeBlockId: null as string | null,
 }
 
 export const useSession = create<SessionState>((set) => ({
@@ -272,4 +287,95 @@ export const useSession = create<SessionState>((set) => ({
     })),
   setExploreView: (exploreView) => set({ exploreView }),
   setProfileTarget: (profileTarget) => set({ profileTarget }),
+  pinResult: (fields) =>
+    set((s) => ({
+      report: {
+        version: 1,
+        blocks: [
+          ...s.report.blocks,
+          { type: 'widget', id: `blk-${s.seq + 1}`, ...fields },
+        ],
+      },
+      seq: s.seq + 1,
+    })),
+  addTextBlock: () =>
+    set((s) => ({
+      report: {
+        version: 1,
+        blocks: [
+          ...s.report.blocks,
+          { type: 'text', id: `blk-${s.seq + 1}`, markdown: '' },
+        ],
+      },
+      seq: s.seq + 1,
+    })),
+  updateTextBlock: (id, markdown) =>
+    set((s) => ({
+      report: {
+        version: 1,
+        blocks: s.report.blocks.map((b) =>
+          b.id === id && b.type === 'text' ? { ...b, markdown } : b,
+        ),
+      },
+    })),
+  updateWidgetTitle: (id, title) =>
+    set((s) => ({
+      report: {
+        version: 1,
+        blocks: s.report.blocks.map((b) =>
+          b.id === id && b.type === 'widget' ? { ...b, title } : b,
+        ),
+      },
+    })),
+  updateWidgetCaption: (id, caption) =>
+    set((s) => ({
+      report: {
+        version: 1,
+        blocks: s.report.blocks.map((b) =>
+          b.id === id && b.type === 'widget' ? { ...b, caption } : b,
+        ),
+      },
+    })),
+  setWidgetVizType: (id, vizType) =>
+    set((s) => ({
+      report: {
+        version: 1,
+        blocks: s.report.blocks.map((b) =>
+          b.id === id && b.type === 'widget' ? { ...b, vizType } : b,
+        ),
+      },
+    })),
+  moveBlock: (id, dir) =>
+    set((s) => {
+      const blocks = s.report.blocks
+      const i = blocks.findIndex((b) => b.id === id)
+      if (i === -1) return {}
+      const j = dir === 'up' ? i - 1 : i + 1
+      if (j < 0 || j >= blocks.length) return {}
+      const next = [...blocks]
+      ;[next[i], next[j]] = [next[j], next[i]]
+      return { report: { version: 1, blocks: next } }
+    }),
+  removeBlock: (id) =>
+    set((s) => ({
+      report: {
+        version: 1,
+        blocks: s.report.blocks.filter((b) => b.id !== id),
+      },
+      activeBlockId: s.activeBlockId === id ? null : s.activeBlockId,
+    })),
+  setActiveBlock: (id) => set({ activeBlockId: id }),
+  loadReport: (doc) =>
+    set((s) => {
+      let maxImported = 0
+      for (const b of doc.blocks) {
+        const m = /^blk-(\d+)$/.exec(b.id)
+        if (m) maxImported = Math.max(maxImported, Number(m[1]))
+      }
+      return {
+        report: doc,
+        activeBlockId: null,
+        seq: Math.max(s.seq, maxImported),
+      }
+    }),
 }))

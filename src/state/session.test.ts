@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { useSession, type Dataset } from './session'
 import type { ColumnConfig } from '../core/schemaTypes'
 import type { ColumnProfile } from '../core/profile'
+import type { ReportDoc, WidgetBlock } from '../core/report'
 
 const ds = (table: string): Dataset => ({
   table,
@@ -333,5 +334,140 @@ describe('session: result profile state + invalidation (M3)', () => {
     const t = useSession.getState().tabs[0]
     expect(t.resultProfile).toBeUndefined()
     expect(t.resultRowCount).toBeUndefined()
+  })
+})
+
+const widgetFields = (
+  over: Partial<Omit<WidgetBlock, 'type' | 'id'>> = {},
+): Omit<WidgetBlock, 'type' | 'id'> => ({
+  title: 'Запрос',
+  sql: 'SELECT * FROM events',
+  datasetNames: ['events'],
+  vizType: 'table',
+  caption: '',
+  ...over,
+})
+
+describe('session: report (M4)', () => {
+  it('starts with an empty report and no active block', () => {
+    const s = useSession.getState()
+    expect(s.report).toEqual({ version: 1, blocks: [] })
+    expect(s.activeBlockId).toBeNull()
+  })
+
+  it('pinResult appends a widget block with id blk-1 and the given fields', () => {
+    useSession.getState().pinResult(widgetFields({ title: 'Выручка' }))
+    const b = useSession.getState().report.blocks
+    expect(b).toHaveLength(1)
+    expect(b[0]).toEqual({
+      type: 'widget',
+      id: 'blk-1',
+      title: 'Выручка',
+      sql: 'SELECT * FROM events',
+      datasetNames: ['events'],
+      vizType: 'table',
+      caption: '',
+    })
+  })
+
+  it('addTextBlock appends an empty text block; ids increment across mixed pin/add', () => {
+    const s = useSession.getState()
+    s.pinResult(widgetFields())
+    s.addTextBlock()
+    const b = useSession.getState().report.blocks
+    expect(b.map((x) => x.id)).toEqual(['blk-1', 'blk-2'])
+    expect(b[1]).toEqual({ type: 'text', id: 'blk-2', markdown: '' })
+  })
+
+  it('updateTextBlock / updateWidgetTitle / updateWidgetCaption / setWidgetVizType edit by id', () => {
+    const s = useSession.getState()
+    s.pinResult(widgetFields()) // blk-1 widget
+    s.addTextBlock() // blk-2 text
+    s.updateTextBlock('blk-2', '## note')
+    s.updateWidgetTitle('blk-1', 'Новый')
+    s.updateWidgetCaption('blk-1', 'подпись')
+    s.setWidgetVizType('blk-1', 'chart')
+    const [w, t] = useSession.getState().report.blocks as [
+      WidgetBlock,
+      { markdown: string },
+    ]
+    expect(t.markdown).toBe('## note')
+    expect(w.title).toBe('Новый')
+    expect(w.caption).toBe('подпись')
+    expect(w.vizType).toBe('chart')
+  })
+
+  it('moveBlock swaps with the neighbor; no-op at the edges', () => {
+    const s = useSession.getState()
+    s.addTextBlock() // blk-1
+    s.addTextBlock() // blk-2
+    s.addTextBlock() // blk-3
+    s.moveBlock('blk-2', 'up')
+    expect(useSession.getState().report.blocks.map((b) => b.id)).toEqual([
+      'blk-2',
+      'blk-1',
+      'blk-3',
+    ])
+    s.moveBlock('blk-2', 'up') // already first -> no-op
+    expect(useSession.getState().report.blocks.map((b) => b.id)).toEqual([
+      'blk-2',
+      'blk-1',
+      'blk-3',
+    ])
+    s.moveBlock('blk-3', 'down') // already last -> no-op
+    expect(useSession.getState().report.blocks.map((b) => b.id)).toEqual([
+      'blk-2',
+      'blk-1',
+      'blk-3',
+    ])
+  })
+
+  it('removeBlock drops the block and nulls activeBlockId if it pointed there', () => {
+    const s = useSession.getState()
+    s.addTextBlock() // blk-1
+    s.addTextBlock() // blk-2
+    s.setActiveBlock('blk-1')
+    s.removeBlock('blk-1')
+    const after = useSession.getState()
+    expect(after.report.blocks.map((b) => b.id)).toEqual(['blk-2'])
+    expect(after.activeBlockId).toBeNull()
+  })
+
+  it('setActiveBlock sets and clears', () => {
+    const s = useSession.getState()
+    s.addTextBlock()
+    s.setActiveBlock('blk-1')
+    expect(useSession.getState().activeBlockId).toBe('blk-1')
+    s.setActiveBlock(null)
+    expect(useSession.getState().activeBlockId).toBeNull()
+  })
+
+  it('loadReport replaces blocks, nulls active, and advances seq past max blk-<n>', () => {
+    const s = useSession.getState()
+    s.setActiveBlock('blk-x')
+    const doc: ReportDoc = {
+      version: 1,
+      blocks: [
+        { type: 'text', id: 'blk-3', markdown: 'a' },
+        { type: 'text', id: 'blk-5', markdown: 'b' },
+      ],
+    }
+    s.loadReport(doc)
+    const after = useSession.getState()
+    expect(after.report).toEqual(doc)
+    expect(after.activeBlockId).toBeNull()
+    // next added block must not collide with blk-5
+    after.addTextBlock()
+    expect(useSession.getState().report.blocks.at(-1)!.id).toBe('blk-6')
+  })
+
+  it('reset clears report back to empty and activeBlockId to null', () => {
+    const s = useSession.getState()
+    s.pinResult(widgetFields())
+    s.setActiveBlock('blk-1')
+    s.reset()
+    const after = useSession.getState()
+    expect(after.report).toEqual({ version: 1, blocks: [] })
+    expect(after.activeBlockId).toBeNull()
   })
 })
