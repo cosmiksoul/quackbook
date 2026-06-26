@@ -30,11 +30,11 @@ export async function renderReport(
       if (spec) {
         const fig = plotFigure(spec, result.rows, LIGHT)
         rendered[b.id] = { kind: 'chart', svg: fig.outerHTML }
-        fig.remove()
       } else {
         rendered[b.id] = { kind: 'table', result }
       }
-    } catch {
+    } catch (e) {
+      console.warn('[export] widget query failed', b.id, e)
       rendered[b.id] = { kind: 'empty', missing }
       missingCount++
     }
@@ -50,8 +50,10 @@ export function downloadHtml(html: string, filename: string): void {
   const a = document.createElement('a')
   a.href = url
   a.download = filename
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 /** Print `html` via a hidden iframe (full static tables + light theme). */
@@ -63,18 +65,20 @@ export function printHtml(html: string): void {
   iframe.style.width = '0'
   iframe.style.height = '0'
   iframe.style.border = '0'
-  document.body.appendChild(iframe)
-  const win = iframe.contentWindow
-  const docu = iframe.contentDocument
-  if (!win || !docu) {
-    iframe.remove()
-    return
+  // Call print() only after the iframe document has fully loaded and laid out.
+  // srcdoc triggers onload reliably; onafterprint removes the iframe when done.
+  // Fallback timeout ensures the iframe is removed even if onafterprint never fires.
+  iframe.onload = () => {
+    const win = iframe.contentWindow
+    if (!win) {
+      iframe.remove()
+      return
+    }
+    win.onafterprint = () => iframe.remove()
+    win.focus()
+    win.print()
+    setTimeout(() => { if (iframe.isConnected) iframe.remove() }, 60000)
   }
-  docu.open()
-  docu.write(html)
-  docu.close()
-  // Give the iframe a tick to lay out before printing, then clean up.
-  win.onafterprint = () => iframe.remove()
-  win.focus()
-  win.print()
+  iframe.srcdoc = html
+  document.body.appendChild(iframe)
 }

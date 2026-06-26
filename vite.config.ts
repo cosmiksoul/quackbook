@@ -8,7 +8,7 @@ import react from '@vitejs/plugin-react'
 const REPO = 'quackbook'
 
 const logger = createLogger()
-const origWarn = logger.warn
+const origWarn = logger.warn.bind(logger)
 logger.warn = (msg, opts) => {
   if (typeof msg === 'string' && msg.includes('Sourcemap for') && msg.includes('duckdb')) return
   origWarn(msg, opts)

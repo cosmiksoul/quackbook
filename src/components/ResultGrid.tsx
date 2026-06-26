@@ -1,15 +1,10 @@
 import { useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { QueryResult } from '../core/arrowToRows'
+import { formatCell } from '../core/arrowToRows'
 
 const ROW_H = 28
 const COL_W = 160
-
-function formatCell(value: unknown): string {
-  if (value === null || value === undefined) return ''
-  if (typeof value === 'bigint') return value.toString()
-  return String(value)
-}
 
 export function ResultGrid({ result }: { result: QueryResult }) {
   const parentRef = useRef<HTMLDivElement>(null)

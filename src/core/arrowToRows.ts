@@ -11,6 +11,13 @@ export interface QueryResult {
   numRows: number
 }
 
+/** Format a cell value as a display string (null/undefined → '', bigint → string). */
+export function formatCell(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'bigint') return value.toString()
+  return String(value)
+}
+
 /** Disambiguate duplicate column names: ['id','id'] -> ['id','id_1']. */
 export function dedupeColumnNames(names: string[]): string[] {
   const seen = new Map<string, number>()

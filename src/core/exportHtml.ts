@@ -1,12 +1,14 @@
 import { marked } from 'marked'
 import type { ReportDoc, Block } from './report'
 import type { QueryResult } from './arrowToRows'
+import { formatCell } from './arrowToRows'
 
 export type RenderedWidget =
   | { kind: 'table'; result: QueryResult }
   | { kind: 'chart'; svg: string }
   | { kind: 'empty'; missing: string[] }
 
+// For element TEXT content / <pre> only — every call site is text, never an attribute, so not escaping single quotes is intentional and safe.
 export function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -42,12 +44,6 @@ const STYLE = `
     .qb-widget, .qb-text { break-inside: avoid; }
   }
 `
-
-function formatCell(v: unknown): string {
-  if (v === null || v === undefined) return ''
-  if (typeof v === 'bigint') return v.toString()
-  return String(v)
-}
 
 function renderBlock(b: Block, rendered: Record<string, RenderedWidget>): string {
   if (b.type === 'text') {

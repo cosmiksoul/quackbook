@@ -122,7 +122,7 @@ body {
 }
 .tab:hover { color: #c8d6d2; }
 .tab.on { background: #1d363b; color: #e9eeea; }
-.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tab-rename {
   background: #0c1c1f; color: #e9eeea; border: 1px solid #34555a;
   border-radius: 4px; font: inherit; padding: 1px 4px; width: 120px;
