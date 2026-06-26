@@ -124,10 +124,12 @@ export function WidgetBlockView({ block, client }: Props) {
       {error && (
         <div className="widget-error">
           <pre className="result-error">{error}</pre>
-          <p className="widget-sources-hint">
-            источник(и): {block.datasetNames.join(', ')} — подгрузи, если
-            отсутствуют
-          </p>
+          {block.datasetNames.length > 0 && (
+            <p className="widget-sources-hint">
+              источник(и): {block.datasetNames.join(', ')} — подгрузи, если
+              отсутствуют
+            </p>
+          )}
         </div>
       )}
       {!error && loading && <p className="result-empty">пересчитываю…</p>}

@@ -18,7 +18,7 @@ export function TextBlockView({ block }: { block: TextBlock }) {
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {
-          updateTextBlock(block.id, draft)
+          if (draft !== block.markdown) updateTextBlock(block.id, draft)
           setEditing(false)
         }}
       />

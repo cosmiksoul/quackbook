@@ -51,8 +51,8 @@ export function Rail({
         )
       : undefined
   const currentSql =
-    activeWidget && activeWidget.type === 'widget'
-      ? activeWidget.sql
+    mode === 'report'
+      ? (activeWidget && activeWidget.type === 'widget' ? activeWidget.sql : null)
       : (activeTab?.sql ?? null)
   const fallbackTable = activeTab?.datasetTable ?? datasets[0]?.table
 
