@@ -5,7 +5,7 @@ import { TextBlockView } from '../components/TextBlockView'
 import { WidgetBlockView } from '../components/WidgetBlockView'
 import { RehydrationBanner } from '../components/RehydrationBanner'
 import { serializeReport, deserializeReport } from '../core/report'
-import { renderReport, downloadHtml } from './exportReport'
+import { renderReport, downloadHtml, printHtml } from './exportReport'
 
 export function Report({ client }: { client: DuckDBClient }) {
   const report = useSession((s) => s.report)
@@ -49,6 +49,15 @@ export function Report({ client }: { client: DuckDBClient }) {
     downloadHtml(html, 'quackbook-report.html')
   }
 
+  async function exportPdf() {
+    const loaded = datasets.map((d) => d.table)
+    const { html, missingCount } = await renderReport(client, report, loaded)
+    if (missingCount > 0) {
+      setToast(`${missingCount} виджет(ов) без данных — попадут в печать с пометкой`)
+    }
+    printHtml(html)
+  }
+
   function clearReport() {
     if (report.blocks.length === 0) return
     // Clear by loading an empty doc — the autosave subscriber removes the
@@ -75,6 +84,9 @@ export function Report({ client }: { client: DuckDBClient }) {
         />
         {report.blocks.length > 0 && (
           <button onClick={exportHtml}>экспорт HTML</button>
+        )}
+        {report.blocks.length > 0 && (
+          <button onClick={exportPdf}>PDF</button>
         )}
         {report.blocks.length > 0 && (
           <button className="report-clear" onClick={clearReport}>
