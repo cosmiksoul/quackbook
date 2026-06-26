@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useSession } from '../state/session'
 
 export function TabStrip() {
@@ -11,13 +11,15 @@ export function TabStrip() {
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
+  const cancelledRef = useRef(false)
 
   function startEdit(id: string, title: string) {
     setEditingId(id)
     setDraft(title)
   }
   function commit() {
-    if (editingId && draft.trim()) renameTab(editingId, draft.trim())
+    if (!cancelledRef.current && editingId && draft.trim()) renameTab(editingId, draft.trim())
+    cancelledRef.current = false
     setEditingId(null)
   }
 
@@ -40,7 +42,10 @@ export function TabStrip() {
               onBlur={commit}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') commit()
-                else if (e.key === 'Escape') setEditingId(null)
+                else if (e.key === 'Escape') {
+                  cancelledRef.current = true
+                  setEditingId(null)
+                }
               }}
             />
           ) : (
