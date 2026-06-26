@@ -467,6 +467,20 @@ describe('session: report (M4)', () => {
   })
 })
 
+describe('session: renameTab (M5)', () => {
+  it('renameTab changes a tab title and leaves others untouched', () => {
+    const s = useSession.getState()
+    s.reset()
+    s.openBlankTab() // tab-1 «Запрос 1»
+    s.openBlankTab() // tab-2 «Запрос 2»
+    const [a, b] = useSession.getState().tabs
+    useSession.getState().renameTab(a.id, 'Воронка')
+    const after = useSession.getState().tabs
+    expect(after.find((t) => t.id === a.id)!.title).toBe('Воронка')
+    expect(after.find((t) => t.id === b.id)!.title).toBe(b.title)
+  })
+})
+
 describe('session: toast (M4)', () => {
   it('setToast sets and clears; reset clears a non-null toast', () => {
     const s = useSession.getState()

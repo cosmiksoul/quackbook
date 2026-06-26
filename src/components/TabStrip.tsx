@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSession } from '../state/session'
 
 export function TabStrip() {
@@ -6,6 +7,19 @@ export function TabStrip() {
   const setActiveTab = useSession((s) => s.setActiveTab)
   const closeTab = useSession((s) => s.closeTab)
   const openBlankTab = useSession((s) => s.openBlankTab)
+  const renameTab = useSession((s) => s.renameTab)
+
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
+
+  function startEdit(id: string, title: string) {
+    setEditingId(id)
+    setDraft(title)
+  }
+  function commit() {
+    if (editingId && draft.trim()) renameTab(editingId, draft.trim())
+    setEditingId(null)
+  }
 
   return (
     <div className="tab-strip">
@@ -14,8 +28,24 @@ export function TabStrip() {
           key={t.id}
           className={t.id === activeTabId ? 'tab on' : 'tab'}
           onClick={() => setActiveTab(t.id)}
+          onDoubleClick={() => startEdit(t.id, t.title)}
         >
-          <span className="tab-title">{t.title}</span>
+          {editingId === t.id ? (
+            <input
+              className="tab-rename"
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commit()
+                else if (e.key === 'Escape') setEditingId(null)
+              }}
+            />
+          ) : (
+            <span className="tab-title">{t.title}</span>
+          )}
           <button
             className="tab-close"
             onClick={(e) => {

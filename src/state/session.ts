@@ -67,6 +67,7 @@ interface SessionState {
   openBlankTab: () => void
   closeTab: (id: string) => void
   setActiveTab: (id: string) => void
+  renameTab: (id: string, title: string) => void
   updateTabSql: (id: string, sql: string) => void
   setTabResult: (id: string, result: QueryResult, meta: { ms: number; rows: number }) => void
   setTabError: (id: string, message: string) => void
@@ -190,6 +191,10 @@ export const useSession = create<SessionState>((set) => ({
       return { tabs, activeTabId }
     }),
   setActiveTab: (id) => set({ activeTabId: id }),
+  renameTab: (id, title) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) => (t.id === id ? { ...t, title } : t)),
+    })),
   updateTabSql: (id, sql) =>
     set((s) => ({
       tabs: s.tabs.map((t) =>
