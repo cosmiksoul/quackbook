@@ -142,11 +142,10 @@ const csvDs = (table: string): Dataset => ({
     { origName: 'id', name: 'id', type: 'VARCHAR', include: true },
     { origName: 'rev', name: 'rev', type: 'VARCHAR', include: true },
   ],
-  dirty: false,
 })
 
 describe('session: schema config — setColumnConfig / stageColumn (M2)', () => {
-  it('setColumnConfig replaces the whole config and clears dirty (used by "типы")', () => {
+  it('setColumnConfig replaces the whole config (used by "типы")', () => {
     useSession.getState().reset()
     const s = useSession.getState()
     s.addDataset(csvDs('events'))
@@ -157,10 +156,9 @@ describe('session: schema config — setColumnConfig / stageColumn (M2)', () => 
     s.setColumnConfig('events', next)
     const d = useSession.getState().datasets[0]
     expect(d.schemaConfig).toEqual(next)
-    expect(d.dirty).toBe(false)
   })
 
-  it('stageColumn edits one column by origName and marks dirty', () => {
+  it('stageColumn edits one column by origName', () => {
     useSession.getState().reset()
     const s = useSession.getState()
     s.addDataset(csvDs('events'))
@@ -172,7 +170,6 @@ describe('session: schema config — setColumnConfig / stageColumn (M2)', () => 
       decimalSep: ',',
     })
     const d = useSession.getState().datasets[0]
-    expect(d.dirty).toBe(true)
     expect(d.schemaConfig).toEqual([
       { origName: 'id', name: 'id', type: 'VARCHAR', include: true },
       { origName: 'rev', name: 'revenue', type: 'DOUBLE', include: true, decimalSep: ',' },
@@ -191,7 +188,7 @@ describe('session: schema config — setColumnConfig / stageColumn (M2)', () => 
 })
 
 describe('session: schema config — resetColumn / setApplied (M2)', () => {
-  it('resetColumn returns a column to the raw VARCHAR baseline and marks dirty', () => {
+  it('resetColumn returns a column to the raw VARCHAR baseline', () => {
     useSession.getState().reset()
     const s = useSession.getState()
     s.addDataset(csvDs('events'))
@@ -212,10 +209,9 @@ describe('session: schema config — resetColumn / setApplied (M2)', () => {
       type: 'VARCHAR',
       include: true,
     })
-    expect(d.dirty).toBe(true)
   })
 
-  it('setApplied updates columns + per-column nullLoss and clears dirty', () => {
+  it('setApplied updates columns + per-column nullLoss', () => {
     useSession.getState().reset()
     const s = useSession.getState()
     s.addDataset(csvDs('events'))
@@ -229,7 +225,6 @@ describe('session: schema config — resetColumn / setApplied (M2)', () => {
       { rev: 3 },
     )
     const d = useSession.getState().datasets[0]
-    expect(d.dirty).toBe(false)
     expect(d.columns).toEqual([
       { name: 'id', type: 'BIGINT', nullLoss: 0 },
       { name: 'rev', type: 'DOUBLE', nullLoss: 3 },

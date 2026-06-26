@@ -20,7 +20,6 @@ export interface Dataset {
   rawTable?: string
   suggested?: { name: string; type: ColumnConfig['type'] }[]
   schemaConfig?: ColumnConfig[]
-  dirty?: boolean
   schemaError?: string | null
   // --- M3 profile (source target), in-memory cache ---
   profile?: ColumnProfile[]
@@ -212,7 +211,7 @@ export const useSession = create<SessionState>((set) => ({
   setColumnConfig: (table, cfgs) =>
     set((s) => ({
       datasets: s.datasets.map((d) =>
-        d.table === table ? { ...d, schemaConfig: cfgs, dirty: false } : d,
+        d.table === table ? { ...d, schemaConfig: cfgs } : d,
       ),
     })),
   stageColumn: (table, cfg) =>
@@ -221,7 +220,6 @@ export const useSession = create<SessionState>((set) => ({
         d.table === table
           ? {
               ...d,
-              dirty: true,
               schemaConfig: (d.schemaConfig ?? []).map((c) =>
                 c.origName === cfg.origName ? cfg : c,
               ),
@@ -250,7 +248,6 @@ export const useSession = create<SessionState>((set) => ({
         }
         return {
           ...d,
-          dirty: true,
           schemaConfig: (d.schemaConfig ?? []).map((c) =>
             c.origName === origName ? restored : c,
           ),
@@ -263,7 +260,6 @@ export const useSession = create<SessionState>((set) => ({
         d.table === table
           ? {
               ...d,
-              dirty: false,
               schemaError: null,
               profile: undefined, // re-materialized table -> stale profile
               rowCount: undefined,

@@ -48,7 +48,6 @@ export async function loadOneFile(
     rawTable: rawTableName(table),
     suggested,
     schemaConfig: baselineConfig(columns),
-    dirty: false,
     schemaError: null,
   }
 }
