@@ -50,8 +50,7 @@ body {
   padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
 }
 .run-btn { background: #e3a95c; color: #15201a; border-color: #e3a95c; font-weight: 600; }
-.dropzone-bar { padding: 10px 16px; }
-.dropzone-bar .dropzone { margin: 0; padding: 14px; }
+.rail .dropzone { margin: 0 0 10px; padding: 12px 10px; font-size: 12px; }
 .body { display: flex; flex: 1; min-height: 0; }
 .rail {
   width: 260px; flex: 0 0 260px; border-right: 1px solid #1d363b;
@@ -231,10 +230,17 @@ body {
 .pstats .k { color: #5c7975; }
 
 /* --- M4 report (notebook) --- */
-.report { display: flex; flex-direction: column; gap: 14px; padding: 16px 18px; overflow: auto; }
-.report-toolbar { display: flex; gap: 8px; }
+.report { display: flex; flex-direction: column; gap: 14px; padding: 0 18px 16px; overflow: auto; flex: 1; min-height: 0; }
+.report-toolbar {
+  position: sticky; top: 0; z-index: 5; align-items: center;
+  display: flex; gap: 8px;
+  margin: 0 -18px; padding: 14px 18px 10px;
+  background: #0f1e21; border-bottom: 1px solid #1d363b;
+}
 .report-toolbar button { background: #11262a; color: #c8d6d2; border: 1px solid #1d363b; border-radius: 7px; padding: 5px 11px; cursor: pointer; }
 .report-toolbar button:hover { background: #1d363b; color: #e9eeea; }
+.report-toolbar .report-clear { margin-left: auto; color: #c79a4a; border-color: #574a1d; }
+.report-toolbar .report-clear:hover { background: #2a2412; color: #e9d39a; }
 
 .report-stack { display: flex; flex-direction: column; gap: 14px; max-width: 920px; }
 .report-block { border: 1px solid transparent; border-radius: 9px; padding: 10px 12px; cursor: pointer; }

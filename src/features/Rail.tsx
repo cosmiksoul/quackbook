@@ -4,6 +4,7 @@ import { detectReferencedTables, detectUsedColumns } from '../core/pruning'
 import { isInternalTable } from '../core/sql'
 import type { DuckDBClient } from '../db/duckdbClient'
 import { SchemaColumnEditor } from '../components/SchemaColumnEditor'
+import { CsvDropzone } from '../components/CsvDropzone'
 import { useSchemaActions } from './useSchemaActions'
 import { useProfileActions } from './useProfileActions'
 
@@ -13,7 +14,13 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)}M`
 }
 
-export function Rail({ client }: { client: DuckDBClient }) {
+export function Rail({
+  client,
+  onFiles,
+}: {
+  client: DuckDBClient
+  onFiles: (files: File[]) => void
+}) {
   const allDatasets = useSession((s) => s.datasets)
   const datasets = allDatasets.filter((d) => !isInternalTable(d.table))
   const tabs = useSession((s) => s.tabs)
@@ -68,6 +75,7 @@ export function Rail({ client }: { client: DuckDBClient }) {
 
   return (
     <aside className="rail">
+      <CsvDropzone onFiles={onFiles} />
       <div className="rail-section-label">Источники</div>
       <ul className="sources">
         {datasets.map((d) => (

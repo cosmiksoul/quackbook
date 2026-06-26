@@ -37,6 +37,16 @@ export function Report({ client }: { client: DuckDBClient }) {
     }
   }
 
+  function clearReport() {
+    if (report.blocks.length === 0) return
+    // Clear by loading an empty doc — the autosave subscriber removes the
+    // localStorage key on an empty report. Confirm: this wipes the notebook
+    // (the structure can be kept via «сохранить» first).
+    if (confirm('Очистить отчёт? Все блоки удалятся (структуру можно сохранить в JSON).')) {
+      loadReport({ version: 1, blocks: [] })
+    }
+  }
+
   return (
     <div className="report">
       <RehydrationBanner />
@@ -51,6 +61,11 @@ export function Report({ client }: { client: DuckDBClient }) {
           style={{ display: 'none' }}
           onChange={open}
         />
+        {report.blocks.length > 0 && (
+          <button className="report-clear" onClick={clearReport}>
+            очистить
+          </button>
+        )}
       </div>
 
       {report.blocks.length === 0 ? (
