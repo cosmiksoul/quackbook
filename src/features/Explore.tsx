@@ -5,6 +5,7 @@ import { SqlEditor } from '../components/SqlEditor'
 import { ResultPanel } from '../components/ResultPanel'
 import { ProfilePanel } from '../components/ProfilePanel'
 import { TabStrip } from '../components/TabStrip'
+import { Icon } from '../components/Icon'
 
 export function Explore({ client }: { client: DuckDBClient }) {
   const tabs = useSession((s) => s.tabs)
@@ -56,7 +57,7 @@ export function Explore({ client }: { client: DuckDBClient }) {
         <header className="panel-head">
           <span className="panel-title">Запрос</span>
           <button className="run-btn" onClick={() => run(tab.sql)}>
-            ▶ запустить
+            <Icon name="play" /> запустить
           </button>
         </header>
         <SqlEditor

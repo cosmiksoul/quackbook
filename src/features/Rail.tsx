@@ -7,6 +7,7 @@ import { SchemaColumnEditor } from '../components/SchemaColumnEditor'
 import { CsvDropzone } from '../components/CsvDropzone'
 import { useSchemaActions } from './useSchemaActions'
 import { useProfileActions } from './useProfileActions'
+import { Icon } from '../components/Icon'
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`
@@ -140,7 +141,7 @@ export function Rail({
                     onClick={() => void applyInferred(ds.table)}
                     title="типизировать все колонки по инференсу одним кликом"
                   >
-                    типы
+                    <Icon name="types" /> типы
                   </button>
                 )}
               </span>
@@ -217,7 +218,7 @@ export function Rail({
               }}
               title="посмотреть распределения колонок источника"
             >
-              ▦ профиль источника
+              <Icon name="profile" /> профиль источника
             </button>
           </div>
         )

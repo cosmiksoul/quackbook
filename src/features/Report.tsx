@@ -6,6 +6,7 @@ import { WidgetBlockView } from '../components/WidgetBlockView'
 import { RehydrationBanner } from '../components/RehydrationBanner'
 import { serializeReport, deserializeReport } from '../core/report'
 import { renderReport, downloadHtml, printHtml } from './exportReport'
+import { Icon } from '../components/Icon'
 
 export function Report({ client }: { client: DuckDBClient }) {
   const report = useSession((s) => s.report)
@@ -73,7 +74,7 @@ export function Report({ client }: { client: DuckDBClient }) {
       <RehydrationBanner />
       <div className="report-toolbar">
         <button onClick={() => addTextBlock()}>+ текст</button>
-        <button onClick={save}>сохранить</button>
+        <button onClick={save}><Icon name="save" /> сохранить</button>
         <button onClick={() => fileRef.current?.click()}>открыть</button>
         <input
           ref={fileRef}
@@ -83,7 +84,7 @@ export function Report({ client }: { client: DuckDBClient }) {
           onChange={open}
         />
         {report.blocks.length > 0 && (
-          <button onClick={exportHtml}>экспорт HTML</button>
+          <button onClick={exportHtml}><Icon name="save" /> экспорт HTML</button>
         )}
         {report.blocks.length > 0 && (
           <button onClick={exportPdf}>PDF</button>

@@ -7,6 +7,7 @@ import { detectReferencedTables } from '../core/pruning'
 import { ResultGrid } from './ResultGrid'
 import { Chart } from './Chart'
 import { ProfilePanel } from './ProfilePanel'
+import { Icon } from './Icon'
 
 interface Props {
   result: QueryResult | null
@@ -91,7 +92,7 @@ export function ResultPanel({ result, meta, error, tabId, sql, client }: Props) 
               setToast('закреплено в отчёт')
             }}
           >
-            📌 закрепить
+            <Icon name="pin" /> закрепить
           </button>
         )}
       </header>

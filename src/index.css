@@ -249,7 +249,7 @@ body {
 
 /* --- M3 profile --- */
 .profbtn {
-  display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px;
+  display: inline-flex; align-items: center; gap: 6px; width: 100%; margin-top: 8px;
   border: 1px solid var(--border); background: var(--surface); color: var(--text-dim);
   padding: 7px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12.5px;
 }
@@ -328,6 +328,9 @@ body {
 
 .pin-btn { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); border-radius: 7px; padding: 3px 9px; cursor: pointer; }
 .pin-btn:hover { background: var(--surface-2); color: var(--text); }
+.run-btn, .pin-btn, .report-toolbar button, .schema-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+}
 
 .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--surface-2); color: var(--text); border-radius: 9px; padding: 8px 16px; box-shadow: 0 6px 20px rgba(0,0,0,.4); z-index: 50; }
 .rehydration-banner { background: #2a2412; color: #e9d39a; border: 1px solid #574a1d; border-radius: 9px; padding: 8px 12px; max-width: 920px; }
