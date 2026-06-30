@@ -369,3 +369,18 @@ body {
   .body { flex-direction: column; }
   .rail { width: auto; flex: none; border-right: 0; border-bottom: 1px solid var(--border); }
 }
+
+/* --- M6 welcome --- */
+.welcome { max-width: 640px; margin: 6vh auto 0; padding: 0 24px; display: flex; flex-direction: column; gap: 16px; }
+.welcome-title { font-size: 26px; font-weight: 700; color: var(--text); }
+.welcome-lead { color: var(--text-dim); line-height: 1.6; font-size: 15px; }
+.welcome-steps { color: var(--text-dim); line-height: 1.7; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.welcome-steps b { color: var(--text); }
+.welcome-actions { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.welcome-cta { background: var(--accent); color: var(--bg); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 9px 16px; font-weight: 600; cursor: pointer; }
+.welcome-cta:hover { background: var(--accent-2); }
+.welcome-cta.ghost { background: var(--surface); color: var(--text); border-color: var(--border); }
+.welcome-cta.ghost:hover { background: var(--surface-2); }
+.welcome-cta:disabled { opacity: .55; cursor: progress; }
+.welcome-credit { color: var(--text-faint); font-size: 12.5px; line-height: 1.5; margin-top: 8px; }
+.welcome-credit a { color: var(--accent); }

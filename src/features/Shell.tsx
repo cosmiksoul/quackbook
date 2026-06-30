@@ -7,6 +7,7 @@ import { Report } from './Report'
 import { Rail } from './Rail'
 import { Toast } from '../components/Toast'
 import { Icon } from '../components/Icon'
+import { WelcomeScreen } from '../components/WelcomeScreen'
 
 export function Shell({ client }: { client: DuckDBClient }) {
   const mode = useSession((s) => s.mode)
@@ -68,9 +69,7 @@ export function Shell({ client }: { client: DuckDBClient }) {
         <main className="workspace">
           {mode === 'explore' ? (
             datasets.length === 0 ? (
-              <div className="explore-empty">
-                Брось файлы в панель слева, чтобы начать.
-              </div>
+              <WelcomeScreen client={client} />
             ) : (
               <Explore client={client} />
             )
