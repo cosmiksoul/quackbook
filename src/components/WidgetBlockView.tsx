@@ -79,7 +79,8 @@ export function WidgetBlockView({ block, client }: Props) {
             onChange={(e) => setTitleDraft(e.target.value)}
             onClick={(e) => e.stopPropagation()}
             onBlur={() => {
-              if (titleDraft.trim() && titleDraft !== block.title) updateWidgetTitle(block.id, titleDraft.trim())
+              const next = titleDraft.trim()
+              if (next && next !== block.title) updateWidgetTitle(block.id, next)
               setEditingTitle(false)
             }}
             onKeyDown={(e) => {

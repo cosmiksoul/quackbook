@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 type IconName =
-  | 'logo' | 'explore' | 'report' | 'play' | 'pin' | 'save' | 'types' | 'profile' | 'chevron'
+  | 'logo' | 'explore' | 'report' | 'play' | 'pin' | 'save' | 'types' | 'profile'
 
 const PATHS: Record<IconName, ReactNode> = {
   // simple, recognizable stroke glyphs (Lucide-ish), 24x24 viewBox
@@ -13,7 +13,6 @@ const PATHS: Record<IconName, ReactNode> = {
   save: <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" />,
   types: <path d="M3 21l3-1 11-11-2-2L4 18l-1 3zM14 6l4 4" />,
   profile: <><path d="M3 21h18" /><rect x="5" y="11" width="3" height="7" /><rect x="11" y="7" width="3" height="11" /><rect x="17" y="13" width="3" height="5" /></>,
-  chevron: <path d="M9 6l6 6-6 6" />,
 }
 
 export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
