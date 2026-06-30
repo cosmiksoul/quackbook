@@ -11,3 +11,8 @@ node_modules/.tmp
 !fixtures/metrics.parquet
 # …and the bundled demo dataset (loaded at runtime by the onboarding screen).
 !public/demo/users.parquet
+
+# The export round-trip test runs DuckDB `COPY TO`, which writes a real file into
+# CWD (qb-export.parquet is caught by *.parquet above; these two are not).
+qb-export.csv
+tmp_qb-export.*

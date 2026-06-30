@@ -28,6 +28,12 @@ export default defineConfig(({ command }) => ({
     // M0: every test is pure/node (core/ + db/ integration). No jsdom yet.
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Each node DuckDB-WASM suite spins a fresh WASM instance; Vitest runs the
+    // files in parallel, so cold init under CPU contention can exceed the
+    // default 10s hook / 5s test budget (intermittent timeouts). Generous
+    // timeouts keep the full-suite gate deterministic.
+    testTimeout: 30_000,
+    hookTimeout: 60_000,
     // duckdb-node.cjs is CommonJS; inline it so Vitest transforms it
     // consistently instead of externalizing.
     server: { deps: { inline: ['@duckdb/duckdb-wasm'] } },

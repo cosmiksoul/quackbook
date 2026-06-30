@@ -2,9 +2,11 @@ import { useState } from 'react'
 import type { DuckDBClient } from '../db/duckdbClient'
 import { useSchemaActions } from '../features/useSchemaActions'
 import { loadDemoData, seedExampleTabs, loadSampleReport } from '../features/demoData'
+import { useSession } from '../state/session'
 
 export function WelcomeScreen({ client }: { client: DuckDBClient }) {
   const { applyInferred } = useSchemaActions(client)
+  const setMode = useSession((s) => s.setMode)
   const [busy, setBusy] = useState<null | 'data' | 'report'>(null)
 
   async function onData() {
@@ -20,7 +22,18 @@ export function WelcomeScreen({ client }: { client: DuckDBClient }) {
   }
 
   async function onReport() {
+    // A returning user may already have a hydrated report; don't clobber it silently.
+    if (
+      useSession.getState().report.blocks.length > 0 &&
+      !confirm('Открыть пример отчёта? Текущий отчёт будет заменён — сохрани его в JSON, если он нужен.')
+    ) {
+      return
+    }
     setBusy('report')
+    // Switch to the report surface up front so the Explore screen doesn't flash
+    // while the demo data fetches. (This unmounts WelcomeScreen — the awaited
+    // loaders below run off useSession.getState(), so they finish regardless.)
+    setMode('report')
     try {
       await loadDemoData(client, applyInferred)
       await loadSampleReport()
