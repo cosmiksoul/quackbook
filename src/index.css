@@ -309,22 +309,31 @@ body {
 .report-toolbar .report-clear:hover { background: #2a2412; color: #e9d39a; }
 
 .report-stack { display: flex; flex-direction: column; gap: 14px; max-width: 920px; }
-.report-block { border: 1px solid transparent; border-radius: 9px; padding: 10px 12px; cursor: pointer; }
-.report-block.active { border-color: #2a4a50; background: #0f2327; }
+.report-block { border: 1px solid transparent; border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: box-shadow .15s, border-color .15s; }
+.report-block.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  box-shadow: var(--glow-accent);
+}
 
-.text-block { line-height: 1.5; color: var(--text-dim); }
-.text-block :where(h1,h2,h3) { color: var(--text); }
+.text-block { font-size: 15px; line-height: 1.65; color: var(--text-dim); }
+.text-block :where(h1,h2,h3) { color: var(--text); line-height: 1.25; margin: .2em 0 .4em; }
+.text-block h1 { font-size: 24px; font-weight: 700; }
+.text-block h2 { font-size: 19px; font-weight: 600; }
+.text-block h3 { font-size: 16px; font-weight: 600; }
 .text-block-edit { width: 100%; min-height: 96px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 8px; font: inherit; resize: vertical; }
 
-.widget-block { display: flex; flex-direction: column; gap: 8px; }
+.widget-block { display: flex; flex-direction: column; gap: 8px; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 12px 14px; }
+.report-block.active .widget-block { box-shadow: none; } /* avoid double frame */
 .widget-head { display: flex; align-items: center; gap: 10px; }
-.widget-title { font-weight: 600; color: var(--text); }
+.widget-title { font-weight: 600; color: var(--text); font-size: 16px; }
 .widget-datasets { display: flex; gap: 4px; }
-.ds-pill { font-size: 11px; background: var(--surface); color: var(--text-dim); border-radius: 5px; padding: 1px 7px; }
+.ds-pill { font-size: 11px; background: var(--surface); color: var(--text-dim); border-radius: 5px; padding: 1px 7px; font-family: var(--font-mono); }
 .widget-sql-toggle, .widget-controls button { background: none; border: none; color: var(--text-dim); cursor: pointer; }
 .widget-controls { margin-left: auto; display: flex; gap: 6px; }
 .widget-controls button:hover { color: var(--text); }
-.widget-sql { background: var(--surface); color: var(--text-dim); border-radius: 7px; padding: 8px; overflow: auto; font-size: 12px; }
+.widget-sql { background: var(--surface); color: var(--text-dim); border-radius: 7px; padding: 8px; overflow: auto; font-size: 12px; font-family: var(--font-mono); }
 .widget-view-toggle { align-self: flex-start; }
 .widget-error { display: flex; flex-direction: column; gap: 4px; }
 .widget-sources-hint { color: #c79a4a; font-size: 12px; }
