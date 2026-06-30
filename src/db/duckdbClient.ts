@@ -29,6 +29,8 @@ export interface DuckDBClient {
   exec(sql: string): Promise<void>
   /** Run a query and return the Arrow result table. */
   query(sql: string): Promise<Table>
+  /** Run a query and return its FULL result serialized as CSV or Parquet bytes. */
+  exportQuery(sql: string, format: 'csv' | 'parquet'): Promise<Uint8Array>
 }
 
 export function createClient(db: AsyncDuckDB): DuckDBClient {
@@ -67,5 +69,15 @@ export function createClient(db: AsyncDuckDB): DuckDBClient {
       await run(sql)
     },
     query: run,
+    async exportQuery(sql, format) {
+      const ext = format === 'parquet' ? 'parquet' : 'csv'
+      const fname = `qb-export.${ext}`
+      const select = sql.trim().replace(/;\s*$/, '').trim()
+      const fmt = format === 'parquet' ? 'PARQUET' : 'CSV, HEADER'
+      await run(`COPY (${select}) TO '${fname}' (FORMAT ${fmt})`)
+      const buf = await db.copyFileToBuffer(fname)
+      await db.dropFile(fname)
+      return buf
+    },
   }
 }
