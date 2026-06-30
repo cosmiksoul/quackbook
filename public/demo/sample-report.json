@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "blocks": [
+    { "type": "text", "id": "blk-1", "markdown": "# Демо: продуктовая аналитика\n\nПример нарративного отчёта в quackbook на данных учебника «SQL 101: Рецепты продуктового аналитика». Виджеты ниже пересчитываются по загруженным таблицам `users` и `payments`." },
+    { "type": "widget", "id": "blk-2", "title": "Дневная аудитория (DAU)", "sql": "SELECT CAST(DateUTC AS DATE) AS day, count(DISTINCT UserID) AS dau FROM users GROUP BY 1 ORDER BY 1;", "datasetNames": ["users"], "vizType": "chart", "caption": "Уникальные пользователи по дням." },
+    { "type": "text", "id": "blk-3", "markdown": "## Выручка\n\nНакопительная выручка по дням (платежи)." },
+    { "type": "widget", "id": "blk-4", "title": "Накопительная выручка", "sql": "SELECT day, sum(daily_revenue) OVER (ORDER BY day) AS cumulative_revenue, daily_revenue FROM (SELECT CAST(CAST(replace(DateUTC, ' UTC', '') AS TIMESTAMP) AS DATE) AS day, sum(CAST(RevenueUSD AS DOUBLE)) AS daily_revenue FROM payments GROUP BY 1) ORDER BY day;", "datasetNames": ["payments"], "vizType": "chart", "caption": "" },
+    { "type": "widget", "id": "blk-5", "title": "A/B: конверсия в оплату", "sql": "SELECT u.ControlOrTest AS variant, count(DISTINCT u.UserID) AS users, count(DISTINCT p.UserID) AS payers, round(100.0 * count(DISTINCT p.UserID) / count(DISTINCT u.UserID), 2) AS conversion_pct FROM users u LEFT JOIN payments p ON CAST(p.UserID AS BIGINT) = u.UserID GROUP BY 1 ORDER BY 1;", "datasetNames": ["users", "payments"], "vizType": "table", "caption": "Конверсия по группам A/B." },
+    { "type": "text", "id": "blk-6", "markdown": "Данные: [SQL 101 — Рецепты продуктового аналитика](https://github.com/cosmiksoul/sql-product-analytics-cookbook) (MIT)." }
+  ]
+}

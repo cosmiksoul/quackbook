@@ -6,6 +6,7 @@ import { createNodeDuckDB } from '../db/nodeDuckDB'
 import { createClient, type DuckDBClient } from '../db/duckdbClient'
 import { arrowToRows } from './arrowToRows'
 import { EXAMPLE_QUERIES } from './exampleQueries'
+import { deserializeReport } from './report'
 
 let db: AsyncDuckDB
 let client: DuckDBClient
@@ -26,6 +27,21 @@ describe('example queries run on the bundled demo data', () => {
   for (const q of EXAMPLE_QUERIES) {
     it(`returns rows: ${q.title}`, async () => {
       const res = arrowToRows(await client.query(q.sql))
+      expect(res.numRows).toBeGreaterThan(0)
+    })
+  }
+})
+
+describe('sample-report widget SQL runs on the demo data', () => {
+  const json = readFileSync(
+    resolve(import.meta.dirname, '../../public/demo/sample-report.json'),
+    'utf8',
+  )
+  const widgets = deserializeReport(json).blocks.filter((b) => b.type === 'widget')
+  for (const w of widgets) {
+    it(`returns rows: ${w.type === 'widget' ? w.title : ''}`, async () => {
+      if (w.type !== 'widget') return
+      const res = arrowToRows(await client.query(w.sql))
       expect(res.numRows).toBeGreaterThan(0)
     })
   }
