@@ -6,6 +6,7 @@ import { Explore } from './Explore'
 import { Report } from './Report'
 import { Rail } from './Rail'
 import { Toast } from '../components/Toast'
+import { Icon } from '../components/Icon'
 
 export function Shell({ client }: { client: DuckDBClient }) {
   const mode = useSession((s) => s.mode)
@@ -45,19 +46,13 @@ export function Shell({ client }: { client: DuckDBClient }) {
   return (
     <div className="shell">
       <header className="topbar">
-        <span className="logo">quackbook</span>
+        <span className="logo"><Icon name="logo" size={18} /> quackbook</span>
         <nav className="mode-toggle">
-          <button
-            className={mode === 'explore' ? 'on' : ''}
-            onClick={() => setMode('explore')}
-          >
-            исследование
+          <button className={mode === 'explore' ? 'on' : ''} onClick={() => setMode('explore')}>
+            <Icon name="explore" /> исследование
           </button>
-          <button
-            className={mode === 'report' ? 'on' : ''}
-            onClick={() => setMode('report')}
-          >
-            отчёт
+          <button className={mode === 'report' ? 'on' : ''} onClick={() => setMode('report')}>
+            <Icon name="report" /> отчёт
           </button>
         </nav>
         <div className="topbar-right">
