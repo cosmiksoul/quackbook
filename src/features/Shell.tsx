@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSession } from '../state/session'
 import type { DuckDBClient } from '../db/duckdbClient'
 import { buildDropTable, rawTableName } from '../core/sql'
@@ -8,8 +9,10 @@ import { Rail } from './Rail'
 import { Toast } from '../components/Toast'
 import { Icon } from '../components/Icon'
 import { WelcomeScreen } from '../components/WelcomeScreen'
+import { AboutModal } from '../components/AboutModal'
 
 export function Shell({ client }: { client: DuckDBClient }) {
+  const [aboutOpen, setAboutOpen] = useState(false)
   const mode = useSession((s) => s.mode)
   const setMode = useSession((s) => s.setMode)
   const datasets = useSession((s) => s.datasets)
@@ -57,6 +60,7 @@ export function Shell({ client }: { client: DuckDBClient }) {
           </button>
         </nav>
         <div className="topbar-right">
+          <button className="about-btn" title="о quackbook" aria-label="о quackbook" onClick={() => setAboutOpen(true)}>?</button>
           <span className="pill-local">● local</span>
           <button className="reset-btn" onClick={handleReset}>
             Reset
@@ -79,6 +83,7 @@ export function Shell({ client }: { client: DuckDBClient }) {
         </main>
       </div>
       <Toast />
+      {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
     </div>
   )
 }
