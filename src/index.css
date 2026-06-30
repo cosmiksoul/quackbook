@@ -34,17 +34,17 @@
   font-family: 'Inter', system-ui, sans-serif;
   color-scheme: dark;
 
-  --bg: #0f1e21;
-  --surface: #11262a;
-  --surface-2: #1d363b;
-  --border: #1d363b;
-  --border-soft: #122a2e;
+  --bg: #0b1418;
+  --surface: #11212a;
+  --surface-2: #18303a;
+  --border: #20393f;
+  --border-soft: #16282d;
   --accent: #e3a95c;
   --accent-2: #cf933f;
   --glow-accent: 0 0 0 1px rgba(227,169,92,.45), 0 4px 22px rgba(227,169,92,.14);
-  --text: #e9eeea;
-  --text-dim: #8da6a2;
-  --text-faint: #5c7975;
+  --text: #eaf0ec;
+  --text-dim: #9fb4af;
+  --text-faint: #607d79;
   --danger: #e8826a;
   --radius: 10px;
   --radius-sm: 6px;
