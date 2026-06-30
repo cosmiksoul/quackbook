@@ -1,0 +1,4 @@
+Demo datasets (payments.csv, users.parquet) are derived from
+"SQL 101: Рецепты продуктового аналитика" by cosmiksoul.
+Source: https://github.com/cosmiksoul/sql-product-analytics-cookbook
+License: MIT. users.parquet is a typed Parquet conversion of the original users.csv.

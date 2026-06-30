@@ -9,3 +9,5 @@ node_modules/.tmp
 *.parquet
 # …except the committed acceptance fixture referenced by fixtures/acceptance.sql.
 !fixtures/metrics.parquet
+# …and the bundled demo dataset (loaded at runtime by the onboarding screen).
+!public/demo/users.parquet
