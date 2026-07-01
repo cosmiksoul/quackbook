@@ -5,6 +5,9 @@ import type { AsyncDuckDB } from '@duckdb/duckdb-wasm'
 import { createNodeDuckDB } from '../db/nodeDuckDB'
 import { createClient, type DuckDBClient } from '../db/duckdbClient'
 import { arrowToRows } from './arrowToRows'
+import { loadOneFile } from '../features/loadFiles'
+import { suggestTypes } from './schemaTypes'
+import { buildMaterializeDDL } from './castBuilder'
 import { EXAMPLE_QUERIES } from './exampleQueries'
 import { deserializeReport } from './report'
 
@@ -15,8 +18,13 @@ beforeAll(async () => {
   db = await createNodeDuckDB()
   client = createClient(db)
   const demo = resolve(import.meta.dirname, '../../public/demo')
-  await client.registerFile('payments.csv', new Uint8Array(readFileSync(resolve(demo, 'payments.csv'))))
-  await client.loadCsvAllVarchar('payments.csv', 'payments') // all-VARCHAR; queries cast
+  // Mirror the app's loadDemoData exactly: payments.csv is loaded AND typed via
+  // inference (DateUTC -> TIMESTAMP, RevenueUSD -> DOUBLE, ...), users.parquet is
+  // native. The recipes must run against the TYPED tables the app actually shows —
+  // loading all-VARCHAR here would test a scenario the demo never produces.
+  const pbytes = new Uint8Array(readFileSync(resolve(demo, 'payments.csv')))
+  const ds = await loadOneFile(client, new File([pbytes], 'payments.csv'), [])
+  await client.exec(buildMaterializeDDL(ds.table, ds.rawTable!, suggestTypes(ds.suggested!)))
   await client.registerFile('users.parquet', new Uint8Array(readFileSync(resolve(demo, 'users.parquet'))))
   await client.loadParquet('users.parquet', 'users')
 }, 60_000)

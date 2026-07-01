@@ -1,8 +1,10 @@
 // 4 product-analytics recipes from the cookbook, ported BigQuery -> DuckDB, over
 // the demo tables `users` (parquet, typed) + `payments` (csv). payments columns
-// are cast explicitly so a recipe runs whether or not payments has been typed;
-// payments.DateUTC carries a trailing " UTC" that auto-typing leaves as VARCHAR,
-// so it is parsed in-query (the book's data-quality theme).
+// are cast explicitly (CAST(... AS DATE/DOUBLE/BIGINT)) so a recipe runs whether
+// or not payments has been typed: those casts accept both the typed column and
+// its all-VARCHAR form. (String functions like replace() do NOT accept a typed
+// column, so we never feed one a bare column ref — auto-typing turns DateUTC,
+// trailing " UTC" and all, straight into a TIMESTAMP.)
 export const EXAMPLE_QUERIES: { title: string; sql: string }[] = [
   {
     title: 'DAU — дневная аудитория',
@@ -17,7 +19,7 @@ ORDER BY 1;`,
        sum(daily_revenue) OVER (ORDER BY day) AS cumulative_revenue,
        daily_revenue
 FROM (
-  SELECT CAST(CAST(replace(DateUTC, ' UTC', '') AS TIMESTAMP) AS DATE) AS day,
+  SELECT CAST(DateUTC AS DATE) AS day,
          sum(CAST(RevenueUSD AS DOUBLE)) AS daily_revenue
   FROM payments
   GROUP BY 1
