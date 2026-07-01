@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { QueryResult } from '../core/arrowToRows'
+import type { QueryResult, ResultColumn } from '../core/arrowToRows'
 import type { ColumnConfig } from '../core/schemaTypes'
 import type { ColumnProfile } from '../core/profile'
 import { buildSelectStar } from '../core/sql'
@@ -9,6 +9,7 @@ import {
   type ReportDoc,
   type WidgetBlock,
 } from '../core/report'
+import { type ResultView, DEFAULT_VIEW } from '../core/resultQuery'
 
 export interface Dataset {
   table: string
@@ -44,6 +45,14 @@ export interface Tab {
   resultRowCount?: number
   resultProfiling?: boolean
   resultProfileError?: string | null
+  // --- M8 windowed result ---
+  mode?: 'paged' | 'raw'
+  columns?: ResultColumn[]
+  rowCount?: number // filtered match count (drives the pager)
+  view?: ResultView
+  window?: QueryResult | null // current page rows (paged) OR full result (raw)
+  windowLoading?: boolean
+  windowSeq?: number // latest-wins guard for async window fetches
 }
 
 export type ProfileTarget =
@@ -76,6 +85,13 @@ interface SessionState {
   updateTabSql: (id: string, sql: string) => void
   setTabResult: (id: string, result: QueryResult, meta: { ms: number; rows: number }) => void
   setTabError: (id: string, message: string) => void
+  setResultMeta: (id: string, meta: { columns: ResultColumn[]; rowCount: number; ms: number }) => void
+  setRawResult: (id: string, window: QueryResult, ms: number) => void
+  setWindow: (id: string, window: QueryResult | null, opts?: { rowCount?: number }) => void
+  patchView: (id: string, patch: Partial<ResultView>) => void
+  resetView: (id: string) => void
+  setWindowLoading: (id: string, loading: boolean) => void
+  nextWindowSeq: () => number
   setColumnConfig: (table: string, cfgs: ColumnConfig[]) => void
   stageColumn: (table: string, cfg: ColumnConfig) => void
   setSchemaError: (table: string, message: string | null) => void
@@ -137,7 +153,7 @@ function loadPersistedReport(): ReportDoc | null {
   }
 }
 
-export const useSession = create<SessionState>((set) => ({
+export const useSession = create<SessionState>((set, get) => ({
   ...initial,
   addDataset: (dataset) =>
     set((s) => ({ datasets: [...s.datasets, dataset] })),
@@ -241,6 +257,44 @@ export const useSession = create<SessionState>((set) => ({
     set((s) => ({
       tabs: s.tabs.map((t) => (t.id === id ? { ...t, error: message } : t)),
     })),
+  setResultMeta: (id, meta) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) =>
+        t.id === id
+          ? { ...t, mode: 'paged', columns: meta.columns, rowCount: meta.rowCount,
+              view: DEFAULT_VIEW, error: null, meta: { ms: meta.ms, rows: meta.rowCount } }
+          : t,
+      ),
+    })),
+  setRawResult: (id, window, ms) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) =>
+        t.id === id
+          ? { ...t, mode: 'raw', window, columns: window.columns, rowCount: window.numRows,
+              windowLoading: false, error: null, meta: { ms, rows: window.numRows } }
+          : t,
+      ),
+    })),
+  setWindow: (id, window, opts) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) =>
+        t.id === id
+          ? { ...t, window, windowLoading: false,
+              rowCount: opts?.rowCount ?? t.rowCount }
+          : t,
+      ),
+    })),
+  patchView: (id, patch) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) =>
+        t.id === id ? { ...t, view: { ...(t.view ?? DEFAULT_VIEW), ...patch } } : t,
+      ),
+    })),
+  resetView: (id) =>
+    set((s) => ({ tabs: s.tabs.map((t) => (t.id === id ? { ...t, view: DEFAULT_VIEW } : t)) })),
+  setWindowLoading: (id, loading) =>
+    set((s) => ({ tabs: s.tabs.map((t) => (t.id === id ? { ...t, windowLoading: loading } : t)) })),
+  nextWindowSeq: () => { const n = get().seq + 1; set({ seq: n }); return n },
   setColumnConfig: (table, cfgs) =>
     set((s) => ({
       datasets: s.datasets.map((d) =>

@@ -3,6 +3,7 @@ import { useSession, type Dataset } from './session'
 import type { ColumnConfig } from '../core/schemaTypes'
 import type { ColumnProfile } from '../core/profile'
 import type { ReportDoc, WidgetBlock } from '../core/report'
+import { DEFAULT_VIEW } from '../core/resultQuery'
 
 const ds = (table: string): Dataset => ({
   table,
@@ -517,5 +518,39 @@ describe('session: toast (M4)', () => {
     s.setToast('again')
     s.reset()
     expect(useSession.getState().toast).toBeNull()
+  })
+})
+
+describe('session: M8 windowed result model', () => {
+  it('setResultMeta seeds paged mode, columns, rowCount, default view', () => {
+    const s = useSession.getState()
+    s.openBlankTab()
+    const id = useSession.getState().activeTabId!
+    s.setResultMeta(id, { columns: [{ name: 'a', type: 'INTEGER' }], rowCount: 42, ms: 3 })
+    const t = useSession.getState().tabs.find((x) => x.id === id)!
+    expect(t.mode).toBe('paged')
+    expect(t.rowCount).toBe(42)
+    expect(t.columns).toEqual([{ name: 'a', type: 'INTEGER' }])
+    expect(t.view).toEqual(DEFAULT_VIEW)
+    expect(t.meta).toEqual({ ms: 3, rows: 42 })
+  })
+
+  it('patchView merges into the view; resetView restores default', () => {
+    const s = useSession.getState()
+    s.openBlankTab()
+    const id = useSession.getState().activeTabId!
+    s.setResultMeta(id, { columns: [], rowCount: 0, ms: 1 })
+    s.patchView(id, { page: 4, search: 'q' })
+    expect(useSession.getState().tabs.find((x) => x.id === id)!.view)
+      .toEqual({ ...DEFAULT_VIEW, page: 4, search: 'q' })
+    s.resetView(id)
+    expect(useSession.getState().tabs.find((x) => x.id === id)!.view).toEqual(DEFAULT_VIEW)
+  })
+
+  it('nextWindowSeq increments the store seq and returns it (race guard)', () => {
+    const s = useSession.getState()
+    const a = s.nextWindowSeq()
+    const b = useSession.getState().nextWindowSeq()
+    expect(b).toBe(a + 1)
   })
 })
