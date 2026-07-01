@@ -14,7 +14,9 @@ import { ProfilePanel } from './ProfilePanel'
 import { Icon } from './Icon'
 import { ColumnFilter as ColumnFilterPopover } from './ColumnFilter'
 import type { SortSpec, ColumnFilter } from '../core/resultQuery'
-import { DEFAULT_VIEW } from '../core/resultQuery'
+import { DEFAULT_VIEW, CHART_CAP, buildWhere, buildOrderBy } from '../core/resultQuery'
+import { resultTempName, quoteIdent } from '../core/sql'
+import { arrowToRows, type QueryResult } from '../core/arrowToRows'
 
 function filterLabel(f: ColumnFilter): string {
   if (f.type === 'text') return `${f.col} ${f.op} «${f.value}»`
@@ -49,6 +51,7 @@ export function ResultPanel({ meta, error, tabId, sql, client }: Props) {
   const [martErr, setMartErr] = useState<string | null>(null)
   const [searchDraft, setSearchDraft] = useState('')
   const [filterCol, setFilterCol] = useState<{ col: string; rect: DOMRect } | null>(null)
+  const [chartData, setChartData] = useState<QueryResult | null>(null)
 
   // display = current page rows (paged) or full result (raw); written by Task 3 flow
   const display = tab?.window ?? null
@@ -66,8 +69,27 @@ export function ResultPanel({ meta, error, tabId, sql, client }: Props) {
     return () => clearTimeout(h)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchDraft])
+
+  // Fetch bounded, view-respecting chart data for paged mode
+  useEffect(() => {
+    if (view !== 'chart' || tab?.mode !== 'paged' || !tab.columns) {
+      setChartData(null) // eslint-disable-line react-hooks/set-state-in-effect
+      return
+    }
+    const cols = tab.columns.map((c) => c.name)
+    const where = buildWhere(cols, resultView)
+    const order = buildOrderBy(resultView.sorts)
+    const q = [`SELECT * FROM ${quoteIdent(resultTempName(tabId))}`, where, order, `LIMIT ${CHART_CAP}`].filter(Boolean).join(' ')
+    void client.query(q).then((t) => setChartData(arrowToRows(t))).catch(() => setChartData(null))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, tabId, tab?.mode, tab?.rowCount, resultView.search, JSON.stringify(resultView.filters), JSON.stringify(resultView.sorts)])
+
   const spec = display ? buildChartSpec(display.columns) : null
   const showChart = view === 'chart' && spec && display
+
+  // For chart rendering: paged → bounded fetch; raw → in-memory window (already the full small result)
+  const chartSrc = tab?.mode === 'paged' ? chartData : display
+  const chartSpec = chartSrc ? buildChartSpec(chartSrc.columns) : null
 
   function toggleSort(col: string, additive: boolean) {
     const cur = resultView.sorts
@@ -261,7 +283,14 @@ export function ResultPanel({ meta, error, tabId, sql, client }: Props) {
       )}
       {view === 'profile' && <ProfilePanel />}
       {view !== 'profile' && error && <pre className="result-error">{error}</pre>}
-      {view !== 'profile' && !error && showChart && <Chart spec={spec!} rows={display!.rows} />}
+      {view !== 'profile' && !error && showChart && chartSrc && chartSpec && (
+        <>
+          <Chart spec={chartSpec} rows={chartSrc.rows} />
+          {tab?.mode === 'paged' && (tab.rowCount ?? 0) > CHART_CAP && (
+            <p className="chart-cap-note">график по первым {CHART_CAP} из {tab.rowCount} строк — агрегируй запросом для полной картины</p>
+          )}
+        </>
+      )}
       {view !== 'profile' && !error && display && !showChart && (
         <ResultGrid
           result={display}
