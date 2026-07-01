@@ -169,6 +169,9 @@ body {
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 12px 14px;
 }
+/* Editor card sits flush under the tab strip → straight top (no rounded-corner
+   artifact where the square-bottomed tabs meet the panel). */
+.query-panel { border-top-left-radius: 0; border-top-right-radius: 0; }
 .query-panel .sql-editor-wrap {
   border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden;
 }
@@ -215,7 +218,7 @@ body {
 /* Chrome-style tab strip: borderless rounded-top tabs, active one raised to the
    panel surface (--surface-2), thin separators between inactive tabs, favicon slot. */
 /* margin-bottom cancels the .explore 16px flex gap so tabs sit flush on the editor card. */
-.tab-strip { display: flex; align-items: flex-end; gap: 0; flex-wrap: wrap; padding-left: 2px; margin-bottom: -16px; }
+.tab-strip { display: flex; align-items: flex-end; gap: 0; flex-wrap: wrap; margin-bottom: -16px; }
 .tab {
   position: relative; display: flex; align-items: center; gap: 7px; margin: 0 1px;
   padding: 7px 12px 8px; font-size: 13px; color: var(--text-dim); cursor: pointer;
@@ -224,6 +227,8 @@ body {
 }
 .tab:hover { color: var(--text); background: var(--surface); }
 .tab.on { background: var(--surface-2); color: var(--text); }
+/* First tab flush with the (square) card left edge — no left-corner step. */
+.tab:first-child { margin-left: 0; }
 .tab::after {
   content: ''; position: absolute; right: -1px; top: 28%; height: 44%; width: 1px;
   background: var(--border); transition: opacity .12s;
@@ -244,7 +249,9 @@ body {
 .tab .tab-close { opacity: 0; }
 .tab:hover .tab-close, .tab.on .tab-close { opacity: 1; }
 .tab-close:hover { color: var(--danger); background: var(--bg); }
-.tab-add { border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-sm); padding: 0 10px; align-self: stretch; display: inline-flex; align-items: center; justify-content: center; }
+/* Tab-shaped: same top radius as a tab, flat bottom + no bottom border so it
+   merges into the editor card; same 1px side margin as tabs for even spacing. */
+.tab-add { border: 1px solid var(--border); border-bottom: 0; background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 0 10px; margin: 0 1px; align-self: stretch; display: inline-flex; align-items: center; justify-content: center; }
 .schema-col.used { opacity: 1; border-left-color: var(--accent); background: var(--surface); }
 .schema-col.used .col-name { color: var(--text); font-weight: 600; }
 .rail-note { color: var(--text-faint); font-size: 11px; margin-top: 10px; line-height: 1.4; }
