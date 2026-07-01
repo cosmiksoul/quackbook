@@ -8,6 +8,8 @@ export type RenderedWidget =
   | { kind: 'chart'; svg: string }
   | { kind: 'empty'; missing: string[] }
 
+export const EXPORT_ROW_CAP = 5000
+
 // For element TEXT content / <pre> only — every call site is text, never an attribute, so not escaping single quotes is intentional and safe.
 export function escapeHtml(s: string): string {
   return s
@@ -38,6 +40,7 @@ const STYLE = `
   .qb-table th { background: #f3f3f3; }
   .qb-chart svg { max-width: 100%; height: auto; }
   .qb-caption { color: #666; font-style: italic; font-size: 13px; margin: 6px 0 0; }
+  .qb-cap { color: #999; font-style: italic; font-size: 12px; margin: 6px 0 0; }
   .qb-empty { color: #999; font-style: italic; }
   @media print {
     @page { margin: 16mm; }
@@ -78,7 +81,8 @@ function renderResult(r: RenderedWidget | undefined): string {
 
 function renderTable(result: QueryResult): string {
   const head = result.columns.map((c) => `<th>${escapeHtml(c.name)}</th>`).join('')
-  const body = result.rows
+  const shown = result.rows.length > EXPORT_ROW_CAP ? result.rows.slice(0, EXPORT_ROW_CAP) : result.rows
+  const body = shown
     .map((row) => {
       const cells = result.columns
         .map((c) => `<td>${escapeHtml(formatCell(row[c.name]))}</td>`)
@@ -86,7 +90,11 @@ function renderTable(result: QueryResult): string {
       return `<tr>${cells}</tr>`
     })
     .join('')
-  return `<table class="qb-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`
+  const cap =
+    result.rows.length > EXPORT_ROW_CAP
+      ? `<p class="qb-cap">таблица усечена: первые ${EXPORT_ROW_CAP} из ${result.rows.length} строк</p>`
+      : ''
+  return `<table class="qb-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>${cap}`
 }
 
 export function buildReportHtml(

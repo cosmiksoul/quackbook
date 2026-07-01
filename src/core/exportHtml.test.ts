@@ -66,6 +66,44 @@ describe('buildReportHtml — widget table', () => {
   })
 })
 
+import { EXPORT_ROW_CAP } from './exportHtml'
+
+describe('buildReportHtml — table row cap', () => {
+  const capDoc: ReportDoc = {
+    version: 1,
+    blocks: [
+      { type: 'widget', id: 'blk-cap', title: 'Cap', sql: 'SELECT n', datasetNames: ['ds'], vizType: 'table', caption: '' },
+    ],
+  }
+
+  it('truncates table to EXPORT_ROW_CAP rows and shows cap note', () => {
+    const rows = Array.from({ length: EXPORT_ROW_CAP + 1 }, (_, i) => ({ n: i }))
+    const rendered: Record<string, RenderedWidget> = {
+      'blk-cap': {
+        kind: 'table',
+        result: { columns: [{ name: 'n', type: 'Int64' }], rows, numRows: rows.length },
+      },
+    }
+    const html = buildReportHtml(capDoc, rendered)
+    // header row + EXPORT_ROW_CAP body rows = EXPORT_ROW_CAP + 1 <tr> elements
+    expect((html.match(/<tr>/g) || []).length).toBe(EXPORT_ROW_CAP + 1)
+    expect(html).toContain(`первые ${EXPORT_ROW_CAP} из ${EXPORT_ROW_CAP + 1} строк`)
+  })
+
+  it('does not truncate or show cap note when rows <= EXPORT_ROW_CAP', () => {
+    const rows = [{ n: 0 }, { n: 1 }, { n: 2 }]
+    const rendered: Record<string, RenderedWidget> = {
+      'blk-cap': {
+        kind: 'table',
+        result: { columns: [{ name: 'n', type: 'Int64' }], rows, numRows: rows.length },
+      },
+    }
+    const html = buildReportHtml(capDoc, rendered)
+    expect((html.match(/<tr>/g) || []).length).toBe(3 + 1)
+    expect(html).not.toContain('таблица усечена')
+  })
+})
+
 describe('buildReportHtml — chart / empty / sql / order', () => {
   const widgetDoc: ReportDoc = {
     version: 1,
