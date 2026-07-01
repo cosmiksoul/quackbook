@@ -14,7 +14,7 @@ import { ProfilePanel } from './ProfilePanel'
 import { Icon } from './Icon'
 import { ColumnFilter as ColumnFilterPopover } from './ColumnFilter'
 import type { SortSpec, ColumnFilter } from '../core/resultQuery'
-import { DEFAULT_VIEW, CHART_CAP, buildWhere, buildOrderBy } from '../core/resultQuery'
+import { DEFAULT_VIEW, CHART_CAP, buildWhere, buildOrderBy, buildEffectiveSql } from '../core/resultQuery'
 import { resultTempName, quoteIdent } from '../core/sql'
 import { arrowToRows, type QueryResult } from '../core/arrowToRows'
 
@@ -208,6 +208,19 @@ export function ResultPanel({ meta, error, tabId, sql, client }: Props) {
             }}
           >
             + витрина
+          </button>
+        )}
+        {tab?.mode === 'paged' && (resultView.sorts.length > 0 || resultView.filters.length > 0 || resultView.search) && (
+          <button
+            className="export-btn"
+            title="перенести текущий вид (WHERE/ORDER BY) в SQL"
+            onClick={() => {
+              const eff = buildEffectiveSql(sql, (tab.columns ?? []).map((c) => c.name), resultView)
+              void navigator.clipboard.writeText(eff)
+              setToast('SQL вида скопирован в буфер')
+            }}
+          >
+            как SQL
           </button>
         )}
         {tab?.mode === 'paged' && (
