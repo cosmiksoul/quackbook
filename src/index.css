@@ -169,13 +169,24 @@ body {
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 12px 14px;
 }
-.query-panel .sql-editor {
+.query-panel .sql-editor-wrap {
   border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden;
-  /* Comfortable default height, draggable taller/shorter via the corner handle. */
-  height: 168px; min-height: 84px; resize: vertical;
 }
+/* Height is set inline from state; drag-resized via the .sql-resize bar below. */
+.query-panel .sql-editor { min-height: 84px; overflow: hidden; }
 .query-panel .sql-editor .cm-editor { height: 100%; }
 .query-panel .sql-editor .cm-scroller { overflow: auto; }
+/* Full-width drag handle — a far bigger target than the old 16px corner grip. */
+.query-panel .sql-resize {
+  height: 12px; cursor: ns-resize; touch-action: none;
+  background: var(--surface); border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+.query-panel .sql-resize::before {
+  content: ''; width: 34px; height: 3px; border-radius: 999px;
+  background: var(--text-faint); transition: background .15s ease;
+}
+.query-panel .sql-resize:hover::before, .query-panel .sql-resize:active::before { background: var(--accent); }
 .cm-editor { font-size: 13px; }
 .result-error {
   color: var(--danger); background: #20100e; border: 1px solid #4a2018;
@@ -203,7 +214,8 @@ body {
 .grid-th.grid-num { justify-content: flex-end; }
 /* Chrome-style tab strip: borderless rounded-top tabs, active one raised to the
    panel surface (--surface-2), thin separators between inactive tabs, favicon slot. */
-.tab-strip { display: flex; align-items: flex-end; gap: 0; flex-wrap: wrap; padding-left: 2px; }
+/* margin-bottom cancels the .explore 16px flex gap so tabs sit flush on the editor card. */
+.tab-strip { display: flex; align-items: flex-end; gap: 0; flex-wrap: wrap; padding-left: 2px; margin-bottom: -16px; }
 .tab {
   position: relative; display: flex; align-items: center; gap: 7px; margin: 0 1px;
   padding: 7px 12px 8px; font-size: 13px; color: var(--text-dim); cursor: pointer;
@@ -446,6 +458,13 @@ body {
 .export-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
 .export-btn { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px 9px; cursor: pointer; font-size: 12px; }
 .export-btn:hover { background: var(--surface-2); color: var(--text); }
+/* Uniform control height across the result toolbar so tops/bottoms line up. */
+.panel-head .view-toggle,
+.panel-head .pin-btn,
+.panel-head .export-btn,
+.panel-head .result-search { height: 28px; box-sizing: border-box; }
+.panel-head .export-btn { display: inline-flex; align-items: center; }
+.panel-head .view-toggle button { display: inline-flex; align-items: center; }
 
 /* --- M7a: «+ витрина» create form (result panel) --- */
 .mart-form { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); }
@@ -485,7 +504,7 @@ body {
 .grid-pager { display: flex; align-items: center; gap: 14px; padding: 6px 4px 0; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
 .grid-pager select { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 4px; }
 .pager-nav { display: inline-flex; align-items: center; gap: 4px; }
-.pager-nav button { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 7px; cursor: pointer; }
+.pager-nav button { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 0; min-width: 30px; text-align: center; cursor: pointer; }
 .pager-nav button:disabled { opacity: .4; cursor: default; }
 .pager-jump { width: 56px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 4px; font-family: var(--font-mono); }
 

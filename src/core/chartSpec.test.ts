@@ -34,6 +34,28 @@ describe('buildChartSpec', () => {
       ]),
     ).toEqual({ kind: 'line', x: 'm', y: 'arpu' })
   })
+  it('treats an ISO-date STRING column as temporal (line) via a sample value', () => {
+    expect(
+      buildChartSpec(
+        [
+          { name: 'day', type: 'Utf8' },
+          { name: 'revenue', type: 'Float64' },
+        ],
+        { day: '2025-04-09', revenue: 8727.59 },
+      ),
+    ).toEqual({ kind: 'line', x: 'day', y: 'revenue' })
+  })
+  it('keeps a non-date STRING column as a bar even with a sample', () => {
+    expect(
+      buildChartSpec(
+        [
+          { name: 'country', type: 'Utf8' },
+          { name: 'n', type: 'Int64' },
+        ],
+        { country: 'US', n: 5 },
+      ),
+    ).toEqual({ kind: 'bar', x: 'country', y: 'n' })
+  })
   it('returns null when there is no numeric column', () => {
     expect(
       buildChartSpec([

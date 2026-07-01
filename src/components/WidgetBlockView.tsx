@@ -65,7 +65,7 @@ export function WidgetBlockView({ block, client }: Props) {
   const error = state.kind === 'error' ? state.message : null
   const loading = state.kind === 'loading'
 
-  const spec = result ? buildChartSpec(result.columns) : null
+  const spec = result ? buildChartSpec(result.columns, result.rows[0]) : null
   const showChart = block.vizType === 'chart' && spec && result
 
   return (

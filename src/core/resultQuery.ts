@@ -18,7 +18,7 @@ export interface ResultView {
   filters: ColumnFilter[]
 }
 
-export const PAGE_SIZES = [10, 20, 50]
+export const PAGE_SIZES = [10, 20, 50, 100]
 export const CHART_CAP = 5000
 export const DEFAULT_VIEW: ResultView = { page: 1, pageSize: 50, sorts: [], search: '', filters: [] }
 

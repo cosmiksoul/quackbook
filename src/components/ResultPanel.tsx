@@ -85,12 +85,12 @@ export function ResultPanel({ meta, error, tabId, sql, client }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, tabId, tab?.mode, tab?.rowCount, resultView.search, JSON.stringify(resultView.filters), JSON.stringify(resultView.sorts)])
 
-  const spec = display ? buildChartSpec(display.columns) : null
+  const spec = display ? buildChartSpec(display.columns, display.rows[0]) : null
   const showChart = view === 'chart' && spec && display
 
   // For chart rendering: paged → bounded fetch; raw → in-memory window (already the full small result)
   const chartSrc = tab?.mode === 'paged' ? chartData : display
-  const chartSpec = chartSrc ? buildChartSpec(chartSrc.columns) : null
+  const chartSpec = chartSrc ? buildChartSpec(chartSrc.columns, chartSrc.rows[0]) : null
 
   function toggleSort(col: string, additive: boolean) {
     const cur = resultView.sorts

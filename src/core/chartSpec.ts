@@ -10,6 +10,11 @@ export function isTemporalType(type: string): boolean {
   return /^(Date|Timestamp|Time)/.test(type)
 }
 
+/** Loose ISO-date string (e.g. "2025-04-09", optionally with a trailing time). */
+function isIsoDateString(v: unknown): boolean {
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)
+}
+
 export interface ChartSpec {
   kind: 'bar' | 'line'
   x: string
@@ -18,12 +23,18 @@ export interface ChartSpec {
 
 /**
  * Auto-pick a simple chart: first non-numeric column => X (category),
- * first numeric column => Y. Line if X is temporal, else bar.
+ * first numeric column => Y. Line if X is temporal — by Arrow type OR, when a
+ * sample row is given, an ISO-date STRING value (a DATE formatted as text still
+ * charts as a time series, ascending, not a value-sorted categorical bar).
  * Null if there is no numeric column or no non-numeric column.
  */
-export function buildChartSpec(columns: ResultColumn[]): ChartSpec | null {
+export function buildChartSpec(
+  columns: ResultColumn[],
+  sample?: Record<string, unknown>,
+): ChartSpec | null {
   const x = columns.find((c) => !isNumericType(c.type))
   const y = columns.find((c) => isNumericType(c.type))
   if (!x || !y) return null
-  return { kind: isTemporalType(x.type) ? 'line' : 'bar', x: x.name, y: y.name }
+  const temporal = isTemporalType(x.type) || isIsoDateString(sample?.[x.name])
+  return { kind: temporal ? 'line' : 'bar', x: x.name, y: y.name }
 }

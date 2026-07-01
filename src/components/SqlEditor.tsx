@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { EditorState, Prec, Compartment } from '@codemirror/state'
 import {
   EditorView,
@@ -61,6 +61,26 @@ export function SqlEditor({ value, onChange, onRun, schema }: Props) {
   // eslint-disable-next-line react-hooks/refs
   schemaRef.current = schema
 
+  // Drag-resizable height via the bottom handle — a much bigger target than the
+  // native 16px corner grip. Default 168px; per-tab (SqlEditor is keyed by tab
+  // id in Explore, so it resets to default on tab switch).
+  const [height, setHeight] = useState(168)
+  function startResize(e: ReactPointerEvent<HTMLDivElement>) {
+    e.preventDefault()
+    const bar = e.currentTarget
+    const startY = e.clientY
+    const startH = host.current?.offsetHeight ?? height
+    bar.setPointerCapture(e.pointerId)
+    const onMove = (ev: PointerEvent) => setHeight(Math.max(84, startH + (ev.clientY - startY)))
+    const onUp = () => {
+      bar.releasePointerCapture(e.pointerId)
+      bar.removeEventListener('pointermove', onMove)
+      bar.removeEventListener('pointerup', onUp)
+    }
+    bar.addEventListener('pointermove', onMove)
+    bar.addEventListener('pointerup', onUp)
+  }
+
   // Mount once. Do NOT depend on `value` (would recreate the editor per keystroke).
   useEffect(() => {
     const runKey = Prec.high(
@@ -117,5 +137,14 @@ export function SqlEditor({ value, onChange, onRun, schema }: Props) {
     v.dispatch({ effects: schemaComp.current.reconfigure(sql({ schema: schema ?? {} })) })
   }, [schema])
 
-  return <div className="sql-editor" ref={host} />
+  return (
+    <div className="sql-editor-wrap">
+      <div className="sql-editor" ref={host} style={{ height }} />
+      <div
+        className="sql-resize"
+        onPointerDown={startResize}
+        title="потяни, чтобы изменить высоту редактора"
+      />
+    </div>
+  )
 }

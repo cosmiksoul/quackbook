@@ -26,7 +26,7 @@ export async function renderReport(
     const missing = b.datasetNames.filter((t) => !loaded.has(t))
     try {
       const result = arrowToRows(await client.query(b.sql))
-      const spec = b.vizType === 'chart' ? buildChartSpec(result.columns) : null
+      const spec = b.vizType === 'chart' ? buildChartSpec(result.columns, result.rows[0]) : null
       if (spec) {
         const fig = plotFigure(spec, result.rows, LIGHT)
         rendered[b.id] = { kind: 'chart', svg: fig.outerHTML }
