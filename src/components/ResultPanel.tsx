@@ -58,8 +58,9 @@ export function ResultPanel({ meta, error, tabId, sql, client }: Props) {
   // resultView = the paging/sorting/filter config (named to avoid shadowing `view` = exploreView)
   const resultView = tab?.view ?? DEFAULT_VIEW
 
-  // Reset searchDraft when switching tabs so the previous tab's draft doesn't leak
-  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
+  // Sync searchDraft from the store: on tab switch AND on external clears (chip ×,
+  // clear-all, re-run all reset search to ''). Loop-safe — a no-op once the debounce commits.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setSearchDraft(resultView.search) }, [tabId, resultView.search])
   // Debounce: commit search to store 250ms after the draft stops changing
   useEffect(() => {
