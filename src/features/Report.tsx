@@ -6,7 +6,6 @@ import { WidgetBlockView } from '../components/WidgetBlockView'
 import { RehydrationBanner } from '../components/RehydrationBanner'
 import { serializeReport, deserializeReport } from '../core/report'
 import { renderReport, downloadHtml, printHtml } from './exportReport'
-import { Icon } from '../components/Icon'
 
 export function Report({ client }: { client: DuckDBClient }) {
   const report = useSession((s) => s.report)
@@ -73,27 +72,36 @@ export function Report({ client }: { client: DuckDBClient }) {
     <div className="report">
       <RehydrationBanner />
       <div className="report-toolbar">
-        <button onClick={() => addTextBlock()}>+ текст</button>
-        <button onClick={save}><Icon name="save" /> сохранить</button>
-        <button onClick={() => fileRef.current?.click()}>открыть</button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json"
-          style={{ display: 'none' }}
-          onChange={open}
-        />
-        {report.blocks.length > 0 && (
-          <button onClick={exportHtml}><Icon name="save" /> экспорт HTML</button>
-        )}
-        {report.blocks.length > 0 && (
-          <button onClick={exportPdf}>PDF</button>
-        )}
-        {report.blocks.length > 0 && (
-          <button className="report-clear" onClick={clearReport}>
-            очистить
-          </button>
-        )}
+        <div className="toolbar-left">
+          <button onClick={() => addTextBlock()}>+ текст</button>
+          <button onClick={() => addTextBlock('```sql\n-- код\n```')}>+ код</button>
+        </div>
+        <div className="toolbar-right">
+          {report.blocks.length > 0 && (
+            <div className="tb-group">
+              <span className="export-label">экспорт в</span>
+              <button onClick={exportHtml}>HTML</button>
+              <button onClick={exportPdf}>PDF</button>
+            </div>
+          )}
+          <div className="tb-group">
+            <span className="export-label">отчёт</span>
+            <button onClick={save}>сохранить</button>
+            <button onClick={() => fileRef.current?.click()}>открыть</button>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json"
+            style={{ display: 'none' }}
+            onChange={open}
+          />
+          {report.blocks.length > 0 && (
+            <button className="report-clear" onClick={clearReport}>
+              очистить
+            </button>
+          )}
+        </div>
       </div>
 
       {report.blocks.length === 0 ? (

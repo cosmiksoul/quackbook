@@ -8,7 +8,38 @@ import {
 } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { sql } from '@codemirror/lang-sql'
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
+import { tags as t } from '@lezer/highlight'
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
+
+// SQL token colors, tuned to the app's warm-amber-on-teal palette (index.css tokens).
+const qbHighlight = HighlightStyle.define([
+  { tag: t.keyword, color: '#e3a95c', fontWeight: '600' },
+  { tag: [t.typeName, t.typeOperator], color: '#cf933f' },
+  { tag: [t.string, t.special(t.string)], color: '#9dc98f' },
+  { tag: [t.number, t.integer, t.float], color: '#74c0c8' },
+  { tag: [t.bool, t.null, t.atom], color: '#e8826a' },
+  { tag: t.function(t.variableName), color: '#e6c48f' },
+  { tag: [t.comment, t.lineComment, t.blockComment], color: '#5f7d78', fontStyle: 'italic' },
+  { tag: [t.operator, t.compareOperator, t.logicOperator, t.arithmeticOperator], color: '#8fa8a3' },
+  { tag: [t.punctuation, t.separator, t.paren, t.bracket], color: '#7c9490' },
+])
+
+// Dark editor chrome (gutter/cursor/selection/active line) matching the theme.
+const qbEditorTheme = EditorView.theme(
+  {
+    '&': { color: 'var(--text)', backgroundColor: 'transparent' },
+    '.cm-content': { caretColor: 'var(--accent)', fontFamily: 'var(--font-mono)' },
+    '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--accent)' },
+    '& ::selection': { backgroundColor: 'rgba(227,169,92,.20)' },
+    '.cm-activeLine': { backgroundColor: 'rgba(255,255,255,.03)' },
+    '.cm-gutters': { backgroundColor: 'transparent', color: 'var(--text-faint)', border: 'none' },
+    '.cm-activeLineGutter': { backgroundColor: 'rgba(255,255,255,.03)', color: 'var(--text-dim)' },
+    '.cm-tooltip': { backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' },
+    '.cm-tooltip-autocomplete ul li[aria-selected]': { backgroundColor: 'var(--surface-2)', color: 'var(--text)' },
+  },
+  { dark: true },
+)
 
 interface Props {
   value: string
@@ -52,6 +83,8 @@ export function SqlEditor({ value, onChange, onRun, schema }: Props) {
         lineNumbers(),
         highlightActiveLine(),
         history(),
+        qbEditorTheme,
+        syntaxHighlighting(qbHighlight),
         schemaComp.current.of(sql({ schema: schemaRef.current ?? {} })),
         autocompletion(),
         runKey,

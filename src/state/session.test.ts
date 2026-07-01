@@ -374,6 +374,13 @@ describe('session: report (M4)', () => {
     expect(b[1]).toEqual({ type: 'text', id: 'blk-2', markdown: '' })
   })
 
+  it('addTextBlock(markdown) seeds the block with initial content', () => {
+    const s = useSession.getState()
+    s.addTextBlock('```sql\n-- код\n```')
+    const b = useSession.getState().report.blocks
+    expect(b).toEqual([{ type: 'text', id: 'blk-1', markdown: '```sql\n-- код\n```' }])
+  })
+
   it('updateTextBlock / updateWidgetTitle / updateWidgetCaption / setWidgetVizType edit by id', () => {
     const s = useSession.getState()
     s.pinResult(widgetFields()) // blk-1 widget

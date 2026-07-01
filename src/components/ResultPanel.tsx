@@ -106,6 +106,7 @@ export function ResultPanel({ result, meta, error, tabId, sql, client }: Props) 
         )}
         {result && (
           <div className="export-group">
+            <span className="export-label">экспорт в</span>
             <button className="export-btn" title="скачать полный результат в CSV" onClick={() => void exportResult('csv')}>CSV</button>
             <button className="export-btn" title="скачать полный результат в Parquet" onClick={() => void exportResult('parquet')}>Parquet</button>
           </div>

@@ -90,7 +90,7 @@ interface SessionState {
   setExploreView: (view: 'table' | 'chart' | 'profile') => void
   setProfileTarget: (target: ProfileTarget) => void
   pinResult: (fields: Omit<WidgetBlock, 'type' | 'id'>) => void
-  addTextBlock: () => void
+  addTextBlock: (markdown?: string) => void
   updateTextBlock: (id: string, markdown: string) => void
   updateWidgetTitle: (id: string, title: string) => void
   updateWidgetCaption: (id: string, caption: string) => void
@@ -356,13 +356,13 @@ export const useSession = create<SessionState>((set) => ({
       },
       seq: s.seq + 1,
     })),
-  addTextBlock: () =>
+  addTextBlock: (markdown = '') =>
     set((s) => ({
       report: {
         version: 1,
         blocks: [
           ...s.report.blocks,
-          { type: 'text', id: `blk-${s.seq + 1}`, markdown: '' },
+          { type: 'text', id: `blk-${s.seq + 1}`, markdown },
         ],
       },
       seq: s.seq + 1,

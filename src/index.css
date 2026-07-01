@@ -46,10 +46,10 @@
   --text-dim: #9fb4af;
   --text-faint: #607d79;
   --danger: #e8826a;
-  --accent-muted: var(--accent-muted);
+  --accent-muted: #5a4a30;
   --track: #16302f;
-  --warn: var(--warn);
-  --warn-bright: var(--warn-bright);
+  --warn: #c79a4a;
+  --warn-bright: #e9d39a;
   --radius: 10px;
   --radius-sm: 6px;
   --shadow-card: 0 1px 2px rgba(0,0,0,.30), 0 6px 20px rgba(0,0,0,.22);
@@ -151,7 +151,11 @@ body {
 }
 .query-panel .sql-editor {
   border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden;
+  /* Comfortable default height, draggable taller/shorter via the corner handle. */
+  height: 168px; min-height: 84px; resize: vertical;
 }
+.query-panel .sql-editor .cm-editor { height: 100%; }
+.query-panel .sql-editor .cm-scroller { overflow: auto; }
 .cm-editor { font-size: 13px; }
 .result-error {
   color: var(--danger); background: #20100e; border: 1px solid #4a2018;
@@ -303,13 +307,16 @@ body {
 .report { display: flex; flex-direction: column; gap: 14px; padding: 0 18px 16px; overflow: auto; flex: 1; min-height: 0; }
 .report-toolbar {
   position: sticky; top: 0; z-index: 5; align-items: center;
-  display: flex; gap: 8px;
+  display: flex; gap: 16px;
   margin: 0 -18px; padding: 14px 18px 10px;
   background: var(--bg); border-bottom: 1px solid var(--border);
 }
-.report-toolbar button { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 11px; cursor: pointer; }
+.report-toolbar button { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px 9px; font-size: 12px; cursor: pointer; }
 .report-toolbar button:hover { background: var(--surface-2); color: var(--text); }
-.report-toolbar .report-clear { margin-left: auto; color: var(--warn); border-color: #574a1d; }
+.report-toolbar .toolbar-left { display: flex; align-items: center; gap: 6px; }
+.report-toolbar .toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.report-toolbar .tb-group { display: inline-flex; align-items: center; gap: 6px; }
+.report-toolbar .report-clear { color: var(--warn); border-color: #574a1d; }
 .report-toolbar .report-clear:hover { background: #2a2412; color: var(--warn-bright); }
 
 .report-stack { display: flex; flex-direction: column; gap: 14px; max-width: 920px; }
@@ -322,6 +329,9 @@ body {
 
 .text-block { font-size: 15px; line-height: 1.65; color: var(--text-dim); }
 .text-block :where(h1,h2,h3) { color: var(--text); line-height: 1.25; margin: .2em 0 .4em; }
+.text-block pre { background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 10px 12px; overflow: auto; margin: .5em 0; }
+.text-block code { font-family: var(--font-mono); font-size: 12.5px; }
+.text-block :not(pre) > code { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 4px; padding: 1px 5px; color: var(--text); }
 .text-block h1 { font-size: 24px; font-weight: 700; }
 .text-block h2 { font-size: 19px; font-weight: 600; }
 .text-block h3 { font-size: 16px; font-weight: 600; }
@@ -399,6 +409,7 @@ body {
 .modal-foot { margin-top: 16px; font-size: 12.5px; color: var(--text-faint); }
 
 /* --- M6 result export --- */
-.export-group { display: inline-flex; gap: 6px; }
+.export-group { display: inline-flex; align-items: center; gap: 6px; }
+.export-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
 .export-btn { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px 9px; cursor: pointer; font-size: 12px; }
 .export-btn:hover { background: var(--surface-2); color: var(--text); }
