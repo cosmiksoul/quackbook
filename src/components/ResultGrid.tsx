@@ -2,11 +2,22 @@ import { useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { QueryResult } from '../core/arrowToRows'
 import { formatCell } from '../core/arrowToRows'
+import type { SortSpec } from '../core/resultQuery'
 
 const ROW_H = 28
 const COL_W = 160
 
-export function ResultGrid({ result }: { result: QueryResult }) {
+export function ResultGrid({
+  result,
+  sorts,
+  onToggleSort,
+  onOpenFilter,
+}: {
+  result: QueryResult
+  sorts: SortSpec[]
+  onToggleSort: (col: string, additive: boolean) => void
+  onOpenFilter: (col: string, rect: DOMRect) => void
+}) {
   const parentRef = useRef<HTMLDivElement>(null)
   const { columns, rows } = result
   // TanStack Virtual returns non-memoized fns; the hook is stable here. (known, accepted)
@@ -19,20 +30,28 @@ export function ResultGrid({ result }: { result: QueryResult }) {
     useFlushSync: false, // React 19: silence flushSync-in-lifecycle warning
   })
   const gridW = columns.length * COL_W
+  const sortIndex = (name: string) => sorts.findIndex((s) => s.col === name)
 
   return (
     <div className="grid-scroll" ref={parentRef}>
       <div className="grid-head" style={{ width: gridW }}>
-        {columns.map((c) => (
-          <div
-            className="grid-cell grid-th"
-            key={c.name}
-            style={{ width: COL_W }}
-            title={`${c.name}: ${c.type}`}
-          >
-            {c.name}
-          </div>
-        ))}
+        {columns.map((c) => {
+          const si = sortIndex(c.name)
+          const dir = si >= 0 ? sorts[si].dir : null
+          return (
+            <div className="grid-cell grid-th" key={c.name} style={{ width: COL_W }} title={`${c.name}: ${c.type}`}>
+              <span className="th-label" onClick={(e) => onToggleSort(c.name, e.shiftKey)}>
+                {c.name}
+                {dir && <span className="th-sort">{dir === 'asc' ? '▲' : '▼'}{sorts.length > 1 ? si + 1 : ''}</span>}
+              </span>
+              <button
+                className="th-filter"
+                title="фильтр по колонке"
+                onClick={(e) => onOpenFilter(c.name, (e.currentTarget as HTMLElement).getBoundingClientRect())}
+              >⏷</button>
+            </div>
+          )
+        })}
       </div>
       <div
         className="grid-body"

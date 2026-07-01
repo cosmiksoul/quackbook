@@ -165,7 +165,7 @@ export function WidgetBlockView({ block, client }: Props) {
         <Chart spec={spec!} rows={result!.rows} />
       )}
       {!error && !loading && result && block.vizType === 'table' && (
-        <ResultGrid result={result} />
+        <ResultGrid result={result} sorts={[]} onToggleSort={() => {}} onOpenFilter={() => {}} />
       )}
       {/*
         Do NOT delete as "dead": this branch fires only for a loaded/rehydrated

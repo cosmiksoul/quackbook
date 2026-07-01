@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { downloadResult } from '../features/exportResult'
-import type { QueryResult } from '../core/arrowToRows'
 import { buildChartSpec } from '../core/chartSpec'
 import type { DuckDBClient } from '../db/duckdbClient'
 import { useProfileActions } from '../features/useProfileActions'
@@ -12,9 +11,10 @@ import { ResultGrid } from './ResultGrid'
 import { Chart } from './Chart'
 import { ProfilePanel } from './ProfilePanel'
 import { Icon } from './Icon'
+import type { SortSpec } from '../core/resultQuery'
+import { DEFAULT_VIEW } from '../core/resultQuery'
 
 interface Props {
-  result: QueryResult | null
   meta: { ms: number; rows: number } | null
   error: string | null
   tabId: string
@@ -22,21 +22,44 @@ interface Props {
   client: DuckDBClient
 }
 
-export function ResultPanel({ result, meta, error, tabId, sql, client }: Props) {
+export function ResultPanel({ meta, error, tabId, sql, client }: Props) {
+  // exploreView: the 'table'/'chart'/'profile' UI toggle — keep as `view`/`setView`
   const view = useSession((s) => s.exploreView)
   const setView = useSession((s) => s.setExploreView)
   const profileTarget = useSession((s) => s.profileTarget)
   const setProfileTarget = useSession((s) => s.setProfileTarget)
   const pinResult = useSession((s) => s.pinResult)
   const setToast = useSession((s) => s.setToast)
+  const patchView = useSession((s) => s.patchView)
+  const tab = useSession((s) => s.tabs.find((t) => t.id === tabId))
   const { profileResult } = useProfileActions(client)
   const { createMart } = useMartActions(client)
   const [martOpen, setMartOpen] = useState(false)
   const [martName, setMartName] = useState('')
   const [martKind, setMartKind] = useState<MartKind>('view')
   const [martErr, setMartErr] = useState<string | null>(null)
-  const spec = result ? buildChartSpec(result.columns) : null
-  const showChart = view === 'chart' && spec && result
+
+  // display = current page rows (paged) or full result (raw); written by Task 3 flow
+  const display = tab?.window ?? null
+  // resultView = the paging/sorting/filter config (named to avoid shadowing `view` = exploreView)
+  const resultView = tab?.view ?? DEFAULT_VIEW
+  const spec = display ? buildChartSpec(display.columns) : null
+  const showChart = view === 'chart' && spec && display
+
+  function toggleSort(col: string, additive: boolean) {
+    const cur = resultView.sorts
+    const i = cur.findIndex((s) => s.col === col)
+    let next: SortSpec[]
+    if (i < 0) next = additive ? [...cur, { col, dir: 'asc' }] : [{ col, dir: 'asc' }]
+    else if (cur[i].dir === 'asc') { const c = [...cur]; c[i] = { col, dir: 'desc' }; next = additive ? c : [{ col, dir: 'desc' }] }
+    else next = additive ? cur.filter((s) => s.col !== col) : []
+    patchView(tabId, { sorts: next, page: 1 })
+  }
+
+  // openFilter: stub — Task 7 will implement the filter popover (no-op for now)
+  function openFilter() {
+    // intentionally empty
+  }
 
   async function exportResult(format: 'csv' | 'parquet') {
     try {
@@ -67,28 +90,28 @@ export function ResultPanel({ result, meta, error, tabId, sql, client }: Props) 
             {meta.rows} строк · {meta.ms.toFixed(1)} мс
           </span>
         )}
-        {(result || (view === 'profile' && profileTarget?.kind === 'source')) && (
+        {(display || (view === 'profile' && profileTarget?.kind === 'source')) && (
           <div className="view-toggle">
             <button
               className={view === 'table' ? 'on' : ''}
-              disabled={!result}
-              title={result ? '' : 'нет результата — запусти запрос'}
+              disabled={!display}
+              title={display ? '' : 'нет результата — запусти запрос'}
               onClick={() => setView('table')}
             >
               таблица
             </button>
             <button
               className={view === 'chart' ? 'on' : ''}
-              disabled={!result || !spec}
-              title={!result ? 'нет результата — запусти запрос' : spec ? '' : 'нет числовой колонки для графика'}
+              disabled={!display || !spec}
+              title={!display ? 'нет результата — запусти запрос' : spec ? '' : 'нет числовой колонки для графика'}
               onClick={() => setView('chart')}
             >
               график
             </button>
             <button
               className={view === 'profile' ? 'on' : ''}
-              disabled={!result}
-              title={result ? '' : 'нет результата — запусти запрос'}
+              disabled={!display}
+              title={display ? '' : 'нет результата — запусти запрос'}
               onClick={() => {
                 setProfileTarget({ kind: 'result', tabId })
                 setView('profile')
@@ -99,7 +122,7 @@ export function ResultPanel({ result, meta, error, tabId, sql, client }: Props) 
             </button>
           </div>
         )}
-        {result && (
+        {display && (
           <button
             className="pin-btn"
             title="закрепить результат в отчёт"
@@ -124,14 +147,14 @@ export function ResultPanel({ result, meta, error, tabId, sql, client }: Props) 
             <Icon name="pin" /> закрепить
           </button>
         )}
-        {result && (
+        {display && (
           <div className="export-group">
             <span className="export-label">экспорт в</span>
             <button className="export-btn" title="скачать полный результат в CSV" onClick={() => void exportResult('csv')}>CSV</button>
             <button className="export-btn" title="скачать полный результат в Parquet" onClick={() => void exportResult('parquet')}>Parquet</button>
           </div>
         )}
-        {result && (
+        {display && (
           <button
             className="export-btn mart-open"
             title="сохранить результат как витрину (VIEW/TABLE)"
@@ -191,9 +214,16 @@ export function ResultPanel({ result, meta, error, tabId, sql, client }: Props) 
       )}
       {view === 'profile' && <ProfilePanel />}
       {view !== 'profile' && error && <pre className="result-error">{error}</pre>}
-      {view !== 'profile' && !error && showChart && <Chart spec={spec!} rows={result!.rows} />}
-      {view !== 'profile' && !error && result && !showChart && <ResultGrid result={result} />}
-      {view !== 'profile' && !error && !result && (
+      {view !== 'profile' && !error && showChart && <Chart spec={spec!} rows={display!.rows} />}
+      {view !== 'profile' && !error && display && !showChart && (
+        <ResultGrid
+          result={display}
+          sorts={resultView.sorts}
+          onToggleSort={toggleSort}
+          onOpenFilter={openFilter}
+        />
+      )}
+      {view !== 'profile' && !error && !display && (
         <p className="result-empty">Запусти запрос (⌘↵), чтобы увидеть строки.</p>
       )}
     </section>

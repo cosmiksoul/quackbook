@@ -449,3 +449,12 @@ body {
 .mart-col { display: flex; justify-content: space-between; padding: 1px 4px; }
 .mart-col .col-name { color: var(--text-dim); font-size: 11.5px; }
 .mart-col .col-type { color: var(--text-faint); font-size: 10.5px; }
+
+/* --- M8 T4: sortable grid headers --- */
+.grid-th { display: flex; align-items: center; gap: 4px; justify-content: space-between; }
+.th-label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.th-label:hover { color: var(--text); }
+.th-sort { color: var(--accent); font-size: 10px; }
+.th-filter { border: 0; background: transparent; color: var(--text-faint); cursor: pointer; font-size: 10px; padding: 0 2px; opacity: 0; }
+.grid-th:hover .th-filter, .th-filter.on { opacity: 1; }
+.th-filter:hover { color: var(--text); }

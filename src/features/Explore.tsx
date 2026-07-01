@@ -77,7 +77,6 @@ export function Explore({ client }: { client: DuckDBClient }) {
         />
       </section>
       <ResultPanel
-        result={tab.result}
         meta={tab.meta}
         error={tab.error}
         tabId={tab.id}
