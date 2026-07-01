@@ -12,6 +12,7 @@ import { ResultPager } from './ResultPager'
 import { Chart } from './Chart'
 import { ProfilePanel } from './ProfilePanel'
 import { Icon } from './Icon'
+import { ColumnFilter as ColumnFilterPopover } from './ColumnFilter'
 import type { SortSpec, ColumnFilter } from '../core/resultQuery'
 import { DEFAULT_VIEW } from '../core/resultQuery'
 
@@ -47,6 +48,7 @@ export function ResultPanel({ meta, error, tabId, sql, client }: Props) {
   const [martKind, setMartKind] = useState<MartKind>('view')
   const [martErr, setMartErr] = useState<string | null>(null)
   const [searchDraft, setSearchDraft] = useState('')
+  const [filterCol, setFilterCol] = useState<{ col: string; rect: DOMRect } | null>(null)
 
   // display = current page rows (paged) or full result (raw); written by Task 3 flow
   const display = tab?.window ?? null
@@ -77,9 +79,8 @@ export function ResultPanel({ meta, error, tabId, sql, client }: Props) {
     patchView(tabId, { sorts: next, page: 1 })
   }
 
-  // openFilter: stub — Task 7 will implement the filter popover (no-op for now)
-  function openFilter() {
-    // intentionally empty
+  function openFilter(col: string, rect: DOMRect) {
+    setFilterCol({ col, rect })
   }
 
   async function exportResult(format: 'csv' | 'parquet') {
@@ -278,6 +279,20 @@ export function ResultPanel({ meta, error, tabId, sql, client }: Props) {
       )}
       {view !== 'profile' && !error && !display && (
         <p className="result-empty">Запусти запрос (⌘↵), чтобы увидеть строки.</p>
+      )}
+      {filterCol && tab?.columns && (
+        <ColumnFilterPopover
+          tabId={tabId}
+          col={filterCol.col}
+          type={tab.columns.find((c) => c.name === filterCol.col)!.type}
+          client={client}
+          rect={filterCol.rect}
+          onClose={() => setFilterCol(null)}
+          onApply={(f) => {
+            patchView(tabId, { filters: [...resultView.filters.filter((x) => x.col !== f.col), f], page: 1 })
+            setFilterCol(null)
+          }}
+        />
       )}
     </section>
   )
