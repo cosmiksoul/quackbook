@@ -308,9 +308,6 @@ body {
   font-size: 12px; text-decoration: underline;
 }
 .schema-actions { display: inline-flex; gap: 6px; }
-.schema-btn.apply { background: var(--accent); color: #15201a; border-color: var(--accent); font-weight: 600; }
-.schema-btn.apply:hover { background: var(--accent-2); }
-.schema-btn.apply:disabled { background: var(--accent-muted); border-color: var(--accent-muted); }
 
 /* --- M3 profile --- */
 .profbtn {

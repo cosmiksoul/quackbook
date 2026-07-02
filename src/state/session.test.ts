@@ -80,15 +80,13 @@ describe('session: tabs', () => {
     expect(st.activeTabId).toBe(st.tabs[1].id)
   })
 
-  it('updateTabSql / setTabResult / setTabError mutate the right tab', () => {
+  it('updateTabSql / setTabError mutate the right tab', () => {
     const s = useSession.getState()
     s.openOrFocusTab('events')
     const id = useSession.getState().tabs[0].id
     s.updateTabSql(id, 'SELECT 1')
-    s.setTabResult(id, { columns: [], rows: [], numRows: 0 }, { ms: 3, rows: 0 })
     let t = useSession.getState().tabs[0]
     expect(t.sql).toBe('SELECT 1')
-    expect(t.meta).toEqual({ ms: 3, rows: 0 })
     expect(t.error).toBeNull()
     s.setTabError(id, 'boom')
     t = useSession.getState().tabs[0]
@@ -535,7 +533,7 @@ describe('session: M8 windowed result model', () => {
     expect(t.meta).toEqual({ ms: 3, rows: 42 })
   })
 
-  it('patchView merges into the view; resetView restores default', () => {
+  it('patchView merges into the view', () => {
     const s = useSession.getState()
     s.openBlankTab()
     const id = useSession.getState().activeTabId!
@@ -543,8 +541,6 @@ describe('session: M8 windowed result model', () => {
     s.patchView(id, { page: 4, search: 'q' })
     expect(useSession.getState().tabs.find((x) => x.id === id)!.view)
       .toEqual({ ...DEFAULT_VIEW, page: 4, search: 'q' })
-    s.resetView(id)
-    expect(useSession.getState().tabs.find((x) => x.id === id)!.view).toEqual(DEFAULT_VIEW)
   })
 
   it('nextWindowSeq increments its own fetch counter, not the id seq', () => {

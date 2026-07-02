@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 type IconName =
-  | 'logo' | 'explore' | 'report' | 'play' | 'pin' | 'save' | 'types' | 'profile' | 'table'
+  | 'logo' | 'explore' | 'report' | 'play' | 'pin' | 'types' | 'profile' | 'table'
 
 // logo is rendered separately (filled duck-head mark); these are stroke glyphs.
 const PATHS: Record<Exclude<IconName, 'logo'>, ReactNode> = {
@@ -10,7 +10,6 @@ const PATHS: Record<Exclude<IconName, 'logo'>, ReactNode> = {
   report: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
   play: <path d="M6 4l14 8-14 8z" />,
   pin: <path d="M12 17v5M9 3h6l-1 7 3 3H7l3-3-1-7z" />,
-  save: <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" />,
   types: <path d="M3 21l3-1 11-11-2-2L4 18l-1 3zM14 6l4 4" />,
   profile: <><path d="M3 21h18" /><rect x="5" y="11" width="3" height="7" /><rect x="11" y="7" width="3" height="11" /><rect x="17" y="13" width="3" height="5" /></>,
   table: <><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M3 9h18M10 9v11" /></>,

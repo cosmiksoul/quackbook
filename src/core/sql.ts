@@ -8,11 +8,6 @@ export function quoteLiteral(value: string): string {
   return `'${value.replace(/'/g, "''")}'`
 }
 
-/** Build `SELECT * FROM <table> LIMIT <limit>`; table identifier is quoted. */
-export function buildSelectAll(table: string, limit = 100): string {
-  return `SELECT * FROM ${quoteIdent(table)} LIMIT ${limit}`
-}
-
 /** Derive a safe SQL identifier from a file name (strip extension, sanitize). */
 export function tableNameFromFilename(fileName: string): string {
   const base = fileName.replace(/\.[^.]+$/, '') // strip last extension
@@ -35,11 +30,6 @@ export function uniqueTableName(desired: string, taken: string[]): string {
 /** `SELECT * FROM <table>` (unbounded) — the seed query for a dataset tab. */
 export function buildSelectStar(table: string): string {
   return `SELECT * FROM ${quoteIdent(table)}`
-}
-
-/** DDL: materialize a registered CSV as an all-VARCHAR baseline table. */
-export function buildLoadCsv(virtualFile: string, table: string): string {
-  return `CREATE OR REPLACE TABLE ${quoteIdent(table)} AS SELECT * FROM read_csv_auto(${quoteLiteral(virtualFile)}, all_varchar = true)`
 }
 
 /** DDL: materialize a registered Parquet file as a typed table. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildCloneTable, buildDescribe, buildDropTable, buildLoadCsv, buildLoadCsvRaw, buildLoadParquet, buildResultTempDDL, buildSelectAll, buildSelectStar, buildSniffCsv, isInternalTable, quoteIdent, quoteLiteral, rawTableName, resultTempName, stripTrailingSemicolon, tableNameFromFilename, uniqueTableName } from './sql'
+import { buildCloneTable, buildDescribe, buildDropTable, buildLoadCsvRaw, buildLoadParquet, buildResultTempDDL, buildSelectStar, buildSniffCsv, isInternalTable, quoteIdent, quoteLiteral, rawTableName, resultTempName, stripTrailingSemicolon, tableNameFromFilename, uniqueTableName } from './sql'
 
 describe('quoteIdent', () => {
   it('double-quotes an identifier', () => {
@@ -16,18 +16,6 @@ describe('quoteLiteral', () => {
   })
   it('escapes embedded single-quotes', () => {
     expect(quoteLiteral("o'brien.csv")).toBe("'o''brien.csv'")
-  })
-})
-
-describe('buildSelectAll', () => {
-  it('builds a select-all with default limit 100', () => {
-    expect(buildSelectAll('events')).toBe('SELECT * FROM "events" LIMIT 100')
-  })
-  it('honors an explicit limit', () => {
-    expect(buildSelectAll('events', 5)).toBe('SELECT * FROM "events" LIMIT 5')
-  })
-  it('quotes the table identifier', () => {
-    expect(buildSelectAll('we"ird')).toBe('SELECT * FROM "we""ird" LIMIT 100')
   })
 })
 
@@ -70,14 +58,6 @@ describe('buildSelectStar', () => {
   it('builds an unbounded select-star with a quoted ident', () => {
     expect(buildSelectStar('events')).toBe('SELECT * FROM "events"')
     expect(buildSelectStar('we"ird')).toBe('SELECT * FROM "we""ird"')
-  })
-})
-
-describe('buildLoadCsv', () => {
-  it('creates an all-VARCHAR table from a registered CSV', () => {
-    expect(buildLoadCsv('events.csv', 'events')).toBe(
-      `CREATE OR REPLACE TABLE "events" AS SELECT * FROM read_csv_auto('events.csv', all_varchar = true)`,
-    )
   })
 })
 

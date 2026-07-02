@@ -37,7 +37,6 @@ export interface Tab {
   title: string
   datasetTable: string | null
   sql: string
-  result: QueryResult | null
   meta: { ms: number; rows: number } | null
   error: string | null
   // --- M3 profile (result target), in-memory cache (wired in slice 2) ---
@@ -51,7 +50,6 @@ export interface Tab {
   rowCount?: number // filtered match count (drives the pager)
   view?: ResultView
   window?: QueryResult | null // current page rows (paged) OR full result (raw)
-  windowLoading?: boolean
   windowSeq?: number // latest-wins guard for async window fetches
 }
 
@@ -84,14 +82,11 @@ interface SessionState {
   setActiveTab: (id: string) => void
   renameTab: (id: string, title: string) => void
   updateTabSql: (id: string, sql: string) => void
-  setTabResult: (id: string, result: QueryResult, meta: { ms: number; rows: number }) => void
   setTabError: (id: string, message: string) => void
   setResultMeta: (id: string, meta: { columns: ResultColumn[]; rowCount: number; ms: number }) => void
   setRawResult: (id: string, window: QueryResult, ms: number) => void
   setWindow: (id: string, window: QueryResult | null, opts?: { rowCount?: number }) => void
   patchView: (id: string, patch: Partial<ResultView>) => void
-  resetView: (id: string) => void
-  setWindowLoading: (id: string, loading: boolean) => void
   nextWindowSeq: () => number
   stampWindowSeq: (id: string, seq: number) => void
   setColumnConfig: (table: string, cfgs: ColumnConfig[]) => void
@@ -183,7 +178,6 @@ export const useSession = create<SessionState>((set, get) => ({
         title: table,
         datasetTable: table,
         sql: buildSelectStar(table),
-        result: null,
         meta: null,
         error: null,
       }
@@ -198,7 +192,6 @@ export const useSession = create<SessionState>((set, get) => ({
         title: `Запрос ${n}`,
         datasetTable: null,
         sql: '',
-        result: null,
         meta: null,
         error: null,
       }
@@ -214,7 +207,6 @@ export const useSession = create<SessionState>((set, get) => ({
           title: spec.title,
           datasetTable: null,
           sql: spec.sql,
-          result: null,
           meta: null,
           error: null,
         }
@@ -250,12 +242,6 @@ export const useSession = create<SessionState>((set, get) => ({
           : t,
       ),
     })),
-  setTabResult: (id, result, meta) =>
-    set((s) => ({
-      tabs: s.tabs.map((t) =>
-        t.id === id ? { ...t, result, meta, error: null } : t,
-      ),
-    })),
   setTabError: (id, message) =>
     set((s) => ({
       tabs: s.tabs.map((t) => (t.id === id ? { ...t, error: message } : t)),
@@ -274,7 +260,7 @@ export const useSession = create<SessionState>((set, get) => ({
       tabs: s.tabs.map((t) =>
         t.id === id
           ? { ...t, mode: 'raw', window, columns: window.columns, rowCount: window.numRows,
-              windowLoading: false, error: null, meta: { ms, rows: window.numRows } }
+              error: null, meta: { ms, rows: window.numRows } }
           : t,
       ),
     })),
@@ -282,7 +268,7 @@ export const useSession = create<SessionState>((set, get) => ({
     set((s) => ({
       tabs: s.tabs.map((t) =>
         t.id === id
-          ? { ...t, window, windowLoading: false, error: null,
+          ? { ...t, window, error: null,
               rowCount: opts?.rowCount ?? t.rowCount }
           : t,
       ),
@@ -293,10 +279,6 @@ export const useSession = create<SessionState>((set, get) => ({
         t.id === id ? { ...t, view: { ...(t.view ?? DEFAULT_VIEW), ...patch } } : t,
       ),
     })),
-  resetView: (id) =>
-    set((s) => ({ tabs: s.tabs.map((t) => (t.id === id ? { ...t, view: DEFAULT_VIEW } : t)) })),
-  setWindowLoading: (id, loading) =>
-    set((s) => ({ tabs: s.tabs.map((t) => (t.id === id ? { ...t, windowLoading: loading } : t)) })),
   nextWindowSeq: () => { const n = get().fetchSeq + 1; set({ fetchSeq: n }); return n },
   stampWindowSeq: (id, seq) =>
     set((s) => ({ tabs: s.tabs.map((t) => (t.id === id ? { ...t, windowSeq: seq } : t)) })),
