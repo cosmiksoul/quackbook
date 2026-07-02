@@ -34,7 +34,7 @@ describe('buildChartSpec', () => {
       ]),
     ).toEqual({ kind: 'line', x: 'm', y: 'arpu' })
   })
-  it('treats an ISO-date STRING column as temporal (line) via a sample value', () => {
+  it('treats an ISO-date STRING column as temporal (line) and flags xDates for parsing', () => {
     expect(
       buildChartSpec(
         [
@@ -43,7 +43,15 @@ describe('buildChartSpec', () => {
         ],
         { day: '2025-04-09', revenue: 8727.59 },
       ),
-    ).toEqual({ kind: 'line', x: 'day', y: 'revenue' })
+    ).toEqual({ kind: 'line', x: 'day', y: 'revenue', xDates: true })
+  })
+  it('does NOT flag xDates for a real temporal type (values are already Date objects)', () => {
+    expect(
+      buildChartSpec([
+        { name: 'm', type: 'Date32<DAY>' },
+        { name: 'arpu', type: 'Float64' },
+      ]),
+    ).toEqual({ kind: 'line', x: 'm', y: 'arpu' })
   })
   it('keeps a non-date STRING column as a bar even with a sample', () => {
     expect(

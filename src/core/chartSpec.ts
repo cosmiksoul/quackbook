@@ -19,6 +19,10 @@ export interface ChartSpec {
   kind: 'bar' | 'line'
   x: string
   y: string
+  // X-значения — ISO-date СТРОКИ (напр. strftime), их надо распарсить в Date,
+  // иначе Observable Plot строит ординальную point-шкалу (тик на каждое значение
+  // + warning). Не ставится для настоящих Arrow-дат — те уже приходят как Date.
+  xDates?: boolean
 }
 
 /**
@@ -35,6 +39,9 @@ export function buildChartSpec(
   const x = columns.find((c) => !isNumericType(c.type))
   const y = columns.find((c) => isNumericType(c.type))
   if (!x || !y) return null
-  const temporal = isTemporalType(x.type) || isIsoDateString(sample?.[x.name])
-  return { kind: temporal ? 'line' : 'bar', x: x.name, y: y.name }
+  const dateString = isIsoDateString(sample?.[x.name])
+  const temporal = isTemporalType(x.type) || dateString
+  const spec: ChartSpec = { kind: temporal ? 'line' : 'bar', x: x.name, y: y.name }
+  if (dateString) spec.xDates = true
+  return spec
 }
