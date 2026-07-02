@@ -39,6 +39,11 @@ describe('classifyColumn', () => {
     expect(classifyColumn('UUID', 9, THRESHOLD_DISTINCT)).toBe('highCardinality')
     expect(classifyColumn('BLOB', 9, THRESHOLD_DISTINCT)).toBe('highCardinality')
   })
+  it('classifies TIMESTAMP_NS / TIMESTAMP_MS / TIMESTAMP_S as range', () => {
+    expect(classifyColumn('TIMESTAMP_NS', 1000, 50)).toBe('range')
+    expect(classifyColumn('TIMESTAMP_MS', 1000, 50)).toBe('range')
+    expect(classifyColumn('TIMESTAMP_S', 1000, 50)).toBe('range')
+  })
 })
 
 // SUMMARIZE returns column_name/column_type (Utf8), min/max/q50 (STRINGS),
@@ -155,11 +160,16 @@ describe('buildHistogramQuery', () => {
   it('equi-width floor bucketing with least() clamp, quoted ident', () => {
     expect(buildHistogramQuery('events', 'rev', 0, 300, 12)).toBe(
       'SELECT least(12 - 1, floor(("rev" - 0) / ((300 - 0) / 12)))::INT AS bucket, count(*) AS n ' +
-        'FROM "events" WHERE "rev" IS NOT NULL GROUP BY bucket ORDER BY bucket',
+        'FROM "events" WHERE "rev" IS NOT NULL GROUP BY 1 ORDER BY 1',
     )
   })
   it('returns null for a degenerate range (hi == lo) -> histogram omitted', () => {
     expect(buildHistogramQuery('events', 'rev', 5, 5, 12)).toBeNull()
+  })
+  it('histogram groups by position so a real column named "bucket" cannot shadow the alias', () => {
+    const sql = buildHistogramQuery('t', 'rev', 0, 10, 12)
+    expect(sql).toContain('GROUP BY 1 ORDER BY 1')
+    expect(sql).not.toContain('GROUP BY bucket')
   })
 })
 

@@ -61,7 +61,7 @@ export function classifyColumn(
   )
     return 'numeric'
   if (/^BOOL/.test(t)) return 'categorical'
-  if (/^(DATE|TIMESTAMP|TIME)\b/.test(t)) return 'range'
+  if (/^(DATE|TIMESTAMP|TIME)/.test(t)) return 'range'
   if (/^VARCHAR\b/.test(t)) {
     return approxUnique <= threshold ? 'categorical' : 'highCardinality'
   }
@@ -167,7 +167,7 @@ export function buildHistogramQuery(
   const c = quoteIdent(col)
   return (
     `SELECT least(${bins} - 1, floor((${c} - ${lo}) / ((${hi} - ${lo}) / ${bins})))::INT AS bucket, ` +
-    `count(*) AS n FROM ${quoteIdent(table)} WHERE ${c} IS NOT NULL GROUP BY bucket ORDER BY bucket`
+    `count(*) AS n FROM ${quoteIdent(table)} WHERE ${c} IS NOT NULL GROUP BY 1 ORDER BY 1`
   )
 }
 
