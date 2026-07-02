@@ -246,7 +246,7 @@ export const useSession = create<SessionState>((set, get) => ({
     set((s) => ({
       tabs: s.tabs.map((t) =>
         t.id === id
-          ? { ...t, sql, resultProfile: undefined, resultRowCount: undefined }
+          ? { ...t, sql, resultProfile: undefined, resultRowCount: undefined, resultProfileError: undefined }
           : t,
       ),
     })),
@@ -282,7 +282,7 @@ export const useSession = create<SessionState>((set, get) => ({
     set((s) => ({
       tabs: s.tabs.map((t) =>
         t.id === id
-          ? { ...t, window, windowLoading: false,
+          ? { ...t, window, windowLoading: false, error: null,
               rowCount: opts?.rowCount ?? t.rowCount }
           : t,
       ),

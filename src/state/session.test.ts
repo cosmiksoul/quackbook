@@ -555,4 +555,22 @@ describe('session: M8 windowed result model', () => {
     expect(b).toBe(a + 1)
     expect(useSession.getState().seq).toBe(idSeqBefore) // id-счётчик не тронут
   })
+
+  it('setWindow clears a stale error (recovered window fetch)', () => {
+    const s = useSession.getState()
+    s.openBlankTab()
+    const id = useSession.getState().activeTabId!
+    s.setTabError(id, 'boom')
+    useSession.getState().setWindow(id, { columns: [], rows: [], numRows: 0 })
+    expect(useSession.getState().tabs[0].error).toBeNull()
+  })
+
+  it('updateTabSql invalidates resultProfileError along with the profile', () => {
+    const s = useSession.getState()
+    s.openBlankTab()
+    const id = useSession.getState().activeTabId!
+    s.setResultProfileError(id, 'old error')
+    useSession.getState().updateTabSql(id, 'SELECT 2')
+    expect(useSession.getState().tabs[0].resultProfileError).toBeUndefined()
+  })
 })
