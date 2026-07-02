@@ -81,7 +81,7 @@ export function ResultGrid({
                       textAlign: typeof v === 'number' || typeof v === 'bigint' ? 'right' : 'left',
                     }}
                   >
-                    {formatCell(v)}
+                    {formatCell(v, c.type)}
                   </div>
                 )
               })}

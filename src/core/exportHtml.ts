@@ -78,7 +78,7 @@ function renderTable(result: QueryResult): string {
   const body = shown
     .map((row) => {
       const cells = result.columns
-        .map((c) => `<td>${escapeHtml(formatCell(row[c.name]))}</td>`)
+        .map((c) => `<td>${escapeHtml(formatCell(row[c.name], c.type))}</td>`)
         .join('')
       return `<tr>${cells}</tr>`
     })
