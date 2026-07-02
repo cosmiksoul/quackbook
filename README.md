@@ -4,7 +4,7 @@
 
 Референс: BigQuery (исследование + профиль) × Colab (ноутбук-нарратив) × Sublime (быстрый редактор с табами).
 
-- **Скоуп:** `scope-quackbook-v1.md`
+- **Скоуп:** `docs/scope-quackbook-v1.md`
 - **Правила для Claude Code:** `CLAUDE.md`
 - **Статус:** v1, в разработке. Каркас — React + TypeScript + Vite (решено, см. `DECISIONS.md`).
 
