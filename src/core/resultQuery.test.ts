@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   DEFAULT_VIEW, buildOrderBy, buildWhere, buildWindowSql, buildCountSql, buildEffectiveSql,
+  buildWidgetSql, WIDGET_ROW_CAP,
   type ResultView, type ColumnFilter,
 } from './resultQuery'
 
@@ -91,5 +92,14 @@ describe('buildEffectiveSql', () => {
     }))).toBe(
       `SELECT * FROM (\nSELECT * FROM t\n) WHERE ("a"::VARCHAR ILIKE '%q%' ESCAPE '\\') ORDER BY "a" ASC`,
     )
+  })
+})
+
+describe('buildWidgetSql', () => {
+  it('wraps the widget sql with a cap+1 LIMIT (cap+1 signals truncation)', () => {
+    expect(buildWidgetSql('SELECT * FROM t;', 100)).toBe('SELECT * FROM (\nSELECT * FROM t\n) LIMIT 101')
+  })
+  it('defaults to WIDGET_ROW_CAP', () => {
+    expect(buildWidgetSql('SELECT 1')).toContain(`LIMIT ${WIDGET_ROW_CAP + 1}`)
   })
 })

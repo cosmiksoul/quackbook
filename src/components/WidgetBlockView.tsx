@@ -3,6 +3,7 @@ import type { WidgetBlock } from '../core/report'
 import type { DuckDBClient } from '../db/duckdbClient'
 import { arrowToRows, type QueryResult } from '../core/arrowToRows'
 import { buildChartSpec } from '../core/chartSpec'
+import { buildWidgetSql, WIDGET_ROW_CAP } from '../core/resultQuery'
 import { useSession } from '../state/session'
 import { ResultGrid } from './ResultGrid'
 import { Chart } from './Chart'
@@ -14,7 +15,7 @@ interface Props {
 
 type WidgetState =
   | { kind: 'loading' }
-  | { kind: 'ok'; result: QueryResult }
+  | { kind: 'ok'; result: QueryResult; truncated: boolean }
   | { kind: 'error'; message: string }
 
 export function WidgetBlockView({ block, client }: Props) {
@@ -47,10 +48,15 @@ export function WidgetBlockView({ block, client }: Props) {
   useEffect(() => {
     let cancelled = false
     client
-      .query(block.sql)
+      .query(buildWidgetSql(block.sql))
       .then((table) => {
         if (cancelled) return
-        setState({ kind: 'ok', result: arrowToRows(table) })
+        const full = arrowToRows(table)
+        const truncated = full.numRows > WIDGET_ROW_CAP
+        const result = truncated
+          ? { ...full, rows: full.rows.slice(0, WIDGET_ROW_CAP), numRows: WIDGET_ROW_CAP }
+          : full
+        setState({ kind: 'ok', result, truncated })
       })
       .catch((e) => {
         if (cancelled) return
@@ -176,6 +182,9 @@ export function WidgetBlockView({ block, client }: Props) {
       */}
       {!error && !loading && result && block.vizType === 'chart' && !spec && (
         <p className="result-empty">нет числовой колонки для графика</p>
+      )}
+      {state.kind === 'ok' && state.truncated && (
+        <p className="widget-truncated">показаны первые {WIDGET_ROW_CAP} строк</p>
       )}
 
       <input

@@ -102,3 +102,11 @@ export function buildEffectiveSql(userSql: string, columns: string[], view: Resu
   const order = buildOrderBy(view.sorts)
   return [`SELECT * FROM (\n${select}\n)`, where, order].filter(Boolean).join(' ')
 }
+
+/** Кап строк, который виджет отчёта готов материализовать в JS-объекты. */
+export const WIDGET_ROW_CAP = 5000
+
+/** Обернуть сохранённый SQL виджета: не больше cap+1 строк (cap+1 — сигнал усечения). */
+export function buildWidgetSql(sql: string, cap = WIDGET_ROW_CAP): string {
+  return `SELECT * FROM (\n${stripTrailingSemicolon(sql)}\n) LIMIT ${cap + 1}`
+}

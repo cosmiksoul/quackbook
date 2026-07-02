@@ -2,8 +2,9 @@ import type { DuckDBClient } from '../db/duckdbClient'
 import type { ReportDoc } from '../core/report'
 import { arrowToRows } from '../core/arrowToRows'
 import { buildChartSpec } from '../core/chartSpec'
-import { buildReportHtml, type RenderedWidget } from '../core/exportHtml'
+import { buildReportHtml, EXPORT_ROW_CAP, type RenderedWidget } from '../core/exportHtml'
 import { plotFigure } from '../components/plotFigure'
+import { buildWidgetSql } from '../core/resultQuery'
 
 const LIGHT = { background: '#ffffff', color: '#1a1a1a' }
 
@@ -25,7 +26,7 @@ export async function renderReport(
     if (b.type !== 'widget') continue
     const missing = b.datasetNames.filter((t) => !loaded.has(t))
     try {
-      const result = arrowToRows(await client.query(b.sql))
+      const result = arrowToRows(await client.query(buildWidgetSql(b.sql, EXPORT_ROW_CAP)))
       const spec = b.vizType === 'chart' ? buildChartSpec(result.columns, result.rows[0]) : null
       if (spec) {
         const fig = plotFigure(spec, result.rows, LIGHT)

@@ -96,7 +96,7 @@ describe('buildReportHtml — table row cap', () => {
     const html = buildReportHtml(capDoc, rendered)
     // header row + EXPORT_ROW_CAP body rows = EXPORT_ROW_CAP + 1 <tr> elements
     expect((html.match(/<tr>/g) || []).length).toBe(EXPORT_ROW_CAP + 1)
-    expect(html).toContain(`первые ${EXPORT_ROW_CAP} из ${EXPORT_ROW_CAP + 1} строк`)
+    expect(html).toContain(`первые ${EXPORT_ROW_CAP} строк`)
   })
 
   it('does not truncate or show cap note when rows <= EXPORT_ROW_CAP', () => {

@@ -407,6 +407,7 @@ body {
 .widget-view-toggle { align-self: flex-start; }
 .widget-error { display: flex; flex-direction: column; gap: 4px; }
 .widget-sources-hint { color: var(--warn); font-size: 12px; }
+.widget-truncated { color: #999; font-style: italic; font-size: 12px; margin: 6px 0 0; }
 .widget-caption { background: transparent; border: none; border-bottom: 1px dashed var(--border); color: var(--text-dim); padding: 4px 2px; font: inherit; }
 .widget-caption:focus { outline: none; border-bottom-color: var(--border); }
 

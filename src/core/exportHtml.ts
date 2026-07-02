@@ -85,7 +85,7 @@ function renderTable(result: QueryResult): string {
     .join('')
   const cap =
     result.rows.length > EXPORT_ROW_CAP
-      ? `<p class="qb-cap">таблица усечена: первые ${EXPORT_ROW_CAP} из ${result.rows.length} строк</p>`
+      ? `<p class="qb-cap">таблица усечена: первые ${EXPORT_ROW_CAP} строк</p>`
       : ''
   return `<table class="qb-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>${cap}`
 }
