@@ -18,36 +18,46 @@ export async function loadOneFile(
 ): Promise<Dataset> {
   const bytes = new Uint8Array(await file.arrayBuffer())
   await client.registerFile(file.name, bytes)
-  const kind: Dataset['kind'] = file.name.toLowerCase().endsWith('.parquet')
-    ? 'parquet'
-    : 'csv'
-  const table = uniqueTableName(tableNameFromFilename(file.name), takenTableNames)
-
-  if (kind === 'parquet') {
-    await client.loadParquet(file.name, table)
-    const columns = await client.describeTable(table)
-    return { table, fileName: file.name, bytes: file.size, kind, columns }
-  }
-
-  await client.loadCsvAllVarchar(file.name, table)
-  const columns = await client.describeTable(table)
-  // Inference is best-effort: a sniff failure must not block the all_varchar
-  // baseline (spec line 142). Empty suggested => "типы" no-op.
-  let suggested: Dataset['suggested']
   try {
-    suggested = parseInferredColumns(arrowToRows(await client.sniffCsv(file.name)))
-  } catch {
-    suggested = []
-  }
-  return {
-    table,
-    fileName: file.name,
-    bytes: file.size,
-    kind,
-    columns,
-    rawTable: rawTableName(table),
-    suggested,
-    schemaConfig: baselineConfig(columns),
-    schemaError: null,
+    const kind: Dataset['kind'] = file.name.toLowerCase().endsWith('.parquet')
+      ? 'parquet'
+      : 'csv'
+    const table = uniqueTableName(tableNameFromFilename(file.name), takenTableNames)
+
+    if (kind === 'parquet') {
+      await client.loadParquet(file.name, table)
+      const columns = await client.describeTable(table)
+      return { table, fileName: file.name, bytes: file.size, kind, columns }
+    }
+
+    await client.loadCsvAllVarchar(file.name, table)
+    const columns = await client.describeTable(table)
+    // Inference is best-effort: a sniff failure must not block the all_varchar
+    // baseline (spec line 142). Empty suggested => "типы" no-op.
+    let suggested: Dataset['suggested']
+    try {
+      suggested = parseInferredColumns(arrowToRows(await client.sniffCsv(file.name)))
+    } catch {
+      suggested = []
+    }
+    return {
+      table,
+      fileName: file.name,
+      bytes: file.size,
+      kind,
+      columns,
+      rawTable: rawTableName(table),
+      suggested,
+      schemaConfig: baselineConfig(columns),
+      schemaError: null,
+    }
+  } finally {
+    // Сырые байты запинены в воркере, таблицы уже материализованы (re-apply
+    // схемы идёт из _qb_raw_) — буфер освобождаем всегда, даже при ошибке.
+    try {
+      await client.dropFile(file.name)
+    } catch {
+      // non-fatal
+    }
   }
 }

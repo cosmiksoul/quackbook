@@ -14,6 +14,8 @@ import {
 export interface DuckDBClient {
   /** Register raw file bytes under a virtual filename DuckDB can read. */
   registerFile(name: string, data: Uint8Array): Promise<void>
+  /** Unregister a virtual file, freeing its pinned buffer in the worker. */
+  dropFile(name: string): Promise<void>
   /**
    * Materialize a registered CSV as TWO tables (model A): an immutable
    * all-VARCHAR raw cast-source (_qb_raw_<t>) plus a typed table (<t>),
@@ -47,6 +49,9 @@ export function createClient(db: AsyncDuckDB): DuckDBClient {
   return {
     async registerFile(name, data) {
       await db.registerFileBuffer(name, data)
+    },
+    async dropFile(name) {
+      await db.dropFile(name)
     },
     async loadCsvAllVarchar(virtualName, tableName) {
       const raw = rawTableName(tableName)
