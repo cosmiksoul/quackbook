@@ -19,20 +19,23 @@ export function ColumnFilter({
   rect: DOMRect; onApply: (f: CF) => void; onClose: () => void
 }) {
   const kind = kindOf(type)
-  const [distinct, setDistinct] = useState<string[] | null>(null)
+  const [distinct, setDistinct] = useState<(string | null)[] | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [nullChecked, setNullChecked] = useState(false)
   const [text, setText] = useState(''); const [op, setOp] = useState<'contains' | 'equals' | 'startsWith'>('contains')
   const [min, setMin] = useState(''); const [max, setMax] = useState('')
 
   useEffect(() => {
-    const q = `SELECT DISTINCT ${quoteIdent(col)}::VARCHAR AS v FROM ${quoteIdent(resultTempName(tabId))} LIMIT ${DISTINCT_MAX + 1}`
+    const q = `SELECT DISTINCT ${quoteIdent(col)}::VARCHAR AS v FROM ${quoteIdent(resultTempName(tabId))} ORDER BY v LIMIT ${DISTINCT_MAX + 1}`
     void client.query(q).then((t) => {
-      const vals = arrowToRows(t).rows.map((r) => String(r.v ?? ''))
+      const vals = arrowToRows(t).rows.map((r) => (r.v === null ? null : String(r.v)))
       setDistinct(vals.length <= DISTINCT_MAX ? vals : null)
     }).catch(() => setDistinct(null))
   }, [tabId, col, client])
 
-  function applySet() { onApply({ col, type: 'set', values: [...checked] }) }
+  function applySet() {
+    onApply({ col, type: 'set', values: [...checked], ...(nullChecked ? { includeNull: true } : {}) })
+  }
   function applyTyped() {
     if (kind === 'number') onApply({ col, type: 'number', min: min ? Number(min) : null, max: max ? Number(max) : null })
     else if (kind === 'date') onApply({ col, type: 'date', min: min || null, max: max || null })
@@ -47,12 +50,26 @@ export function ColumnFilter({
           <>
             <div className="cf-list">
               {distinct.map((v) => (
-                <label key={v}><input type="checkbox" checked={checked.has(v)}
-                  onChange={(e) => { const n = new Set(checked); if (e.target.checked) n.add(v); else n.delete(v); setChecked(n) }} />
-                  {v === '' ? '∅' : v}</label>
+                <label key={v ?? '∅'}>
+                  <input
+                    type="checkbox"
+                    checked={v === null ? nullChecked : checked.has(v)}
+                    onChange={(e) => {
+                      if (v === null) { setNullChecked(e.target.checked); return }
+                      const n = new Set(checked)
+                      if (e.target.checked) n.add(v)
+                      else n.delete(v)
+                      setChecked(n)
+                    }}
+                  />
+                  {v === null ? '∅ (null)' : v === '' ? '(пусто)' : v}
+                </label>
               ))}
             </div>
-            <div className="cf-actions"><button onClick={applySet}>применить</button><button onClick={onClose}>отмена</button></div>
+            <div className="cf-actions">
+              <button onClick={applySet} disabled={checked.size === 0 && !nullChecked}>применить</button>
+              <button onClick={onClose}>отмена</button>
+            </div>
           </>
         ) : (
           <>

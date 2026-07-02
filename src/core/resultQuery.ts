@@ -8,7 +8,7 @@ export type ColumnFilter =
   | { col: string; type: 'null'; op: 'isNull' | 'notNull' }
   | { col: string; type: 'number'; min: number | null; max: number | null }
   | { col: string; type: 'date'; min: string | null; max: string | null }
-  | { col: string; type: 'set'; values: string[] }
+  | { col: string; type: 'set'; values: string[]; includeNull?: boolean }
 
 export interface ResultView {
   page: number // 1-based
@@ -61,12 +61,18 @@ function columnPredicate(f: ColumnFilter): string | null {
   if (f.type === 'date') {
     const parts: string[] = []
     if (f.min) parts.push(`${col} >= ${quoteLiteral(f.min)}`)
-    if (f.max) parts.push(`${col} <= ${quoteLiteral(f.max)}`)
+    // «до» включительно: `<= 'YYYY-MM-DD'` сравнивал бы с полуночью и отрезал
+    // весь последний день у TIMESTAMP — сравниваем строго со следующим днём.
+    if (f.max) parts.push(`${col} < ${quoteLiteral(f.max)}::DATE + INTERVAL 1 DAY`)
     return parts.length ? `(${parts.join(' AND ')})` : null
   }
-  // set
-  if (f.values.length === 0) return null
-  return `(${col}::VARCHAR IN (${f.values.map((v) => quoteLiteral(v)).join(', ')}))`
+  // set: NULL не ловится через IN (NULL IN (...) -> NULL) — отдельный IS NULL.
+  const inList = f.values.length
+    ? `${col}::VARCHAR IN (${f.values.map((v) => quoteLiteral(v)).join(', ')})`
+    : null
+  const nullPred = f.includeNull ? `${col} IS NULL` : null
+  const parts = [inList, nullPred].filter(Boolean)
+  return parts.length ? `(${parts.join(' OR ')})` : null
 }
 
 export function buildWhere(columns: string[], view: ResultView): string {

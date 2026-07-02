@@ -22,7 +22,7 @@ function filterLabel(f: ColumnFilter): string {
   if (f.type === 'text') return `${f.col} ${f.op} «${f.value}»`
   if (f.type === 'null') return `${f.col} ${f.op === 'isNull' ? 'is null' : 'not null'}`
   if (f.type === 'number' || f.type === 'date') return `${f.col} ∈ [${f.min ?? '−∞'}, ${f.max ?? '+∞'}]`
-  return `${f.col} ∈ {${f.values.join(', ')}}`
+  return `${f.col} ∈ {${[...f.values, ...(f.includeNull ? ['∅'] : [])].join(', ')}}`
 }
 
 interface Props {

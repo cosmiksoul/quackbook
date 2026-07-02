@@ -60,6 +60,32 @@ describe('buildWhere', () => {
     const f: ColumnFilter = { col: 'amount', type: 'number', min: NaN, max: NaN }
     expect(buildWhere(COLS, view({ filters: [f] }))).toBe('')
   })
+  it('date max bound includes the whole end day (TIMESTAMP columns)', () => {
+    const where = buildWhere(['ts'], {
+      ...DEFAULT_VIEW,
+      filters: [{ col: 'ts', type: 'date', min: null, max: '2024-01-31' }],
+    })
+    expect(where).toBe(`WHERE ("ts" < '2024-01-31'::DATE + INTERVAL 1 DAY)`)
+  })
+  it('set filter with includeNull matches NULL rows via IS NULL', () => {
+    const where = buildWhere(['c'], {
+      ...DEFAULT_VIEW,
+      filters: [{ col: 'c', type: 'set', values: ['x'], includeNull: true }],
+    })
+    expect(where).toBe(`WHERE ("c"::VARCHAR IN ('x') OR "c" IS NULL)`)
+  })
+  it('set filter with ONLY the null bucket', () => {
+    const where = buildWhere(['c'], {
+      ...DEFAULT_VIEW,
+      filters: [{ col: 'c', type: 'set', values: [], includeNull: true }],
+    })
+    expect(where).toBe(`WHERE ("c" IS NULL)`)
+  })
+  it('empty set and no null bucket -> no predicate', () => {
+    expect(
+      buildWhere(['c'], { ...DEFAULT_VIEW, filters: [{ col: 'c', type: 'set', values: [] }] }),
+    ).toBe('')
+  })
 })
 
 describe('buildWindowSql', () => {
