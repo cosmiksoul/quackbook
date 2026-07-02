@@ -23,6 +23,15 @@ describe('buildReportHtml — shell + text', () => {
     }
     expect(buildReportHtml(doc, {})).toContain('<h1>Привет</h1>')
   })
+
+  it('экранирует сырой HTML текстового блока (XSS)', () => {
+    const doc: ReportDoc = {
+      version: 1,
+      blocks: [{ type: 'text', id: 'blk-1', markdown: '<img src=x onerror="alert(1)">' }],
+    }
+    const html = buildReportHtml(doc, {})
+    expect(html).not.toContain('<img src=x')
+  })
 })
 
 import type { RenderedWidget } from './exportHtml'

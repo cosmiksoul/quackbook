@@ -1,7 +1,9 @@
-import { marked } from 'marked'
 import type { ReportDoc, Block } from './report'
 import type { QueryResult } from './arrowToRows'
 import { formatCell } from './arrowToRows'
+import { escapeHtml, renderMarkdown } from './markdown'
+
+export { escapeHtml } from './markdown'
 
 export type RenderedWidget =
   | { kind: 'table'; result: QueryResult }
@@ -9,15 +11,6 @@ export type RenderedWidget =
   | { kind: 'empty'; missing: string[] }
 
 export const EXPORT_ROW_CAP = 5000
-
-// For element TEXT content / <pre> only — every call site is text, never an attribute, so not escaping single quotes is intentional and safe.
-export function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
 
 // Light, print-friendly theme. Inlined so the exported file is self-contained.
 const STYLE = `
@@ -50,7 +43,7 @@ const STYLE = `
 
 function renderBlock(b: Block, rendered: Record<string, RenderedWidget>): string {
   if (b.type === 'text') {
-    return `<section class="qb-text">${marked.parse(b.markdown || '') as string}</section>`
+    return `<section class="qb-text">${renderMarkdown(b.markdown || '')}</section>`
   }
   const pills = b.datasetNames
     .map((t) => `<span class="qb-pill">${escapeHtml(t)}</span>`)

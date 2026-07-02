@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { marked } from 'marked'
+import { renderMarkdown } from '../core/markdown'
 import type { TextBlock } from '../core/report'
 import { useSession } from '../state/session'
 
@@ -25,8 +25,8 @@ export function TextBlockView({ block }: { block: TextBlock }) {
     )
   }
 
-  // local single-user content, no untrusted input -> no sanitizer (CLAUDE.md rule 2)
-  const html = marked.parse(block.markdown || PLACEHOLDER) as string
+  // Markdown может прийти из импортированного .json-отчёта — сырой HTML экранируется (renderMarkdown).
+  const html = renderMarkdown(block.markdown || PLACEHOLDER)
   return (
     <div
       className="text-block"
