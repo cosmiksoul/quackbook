@@ -60,6 +60,10 @@ describe('uniqueTableName', () => {
     expect(uniqueTableName('events', ['events'])).toBe('events_1')
     expect(uniqueTableName('events', ['events', 'events_1'])).toBe('events_2')
   })
+  it('collides case-insensitively (DuckDB catalog is case-insensitive)', () => {
+    expect(uniqueTableName('Sales', ['sales'])).toBe('Sales_1')
+    expect(uniqueTableName('SALES', ['sales', 'Sales_1'])).toBe('SALES_2')
+  })
 })
 
 describe('buildSelectStar', () => {

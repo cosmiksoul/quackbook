@@ -48,6 +48,9 @@ describe('validateMartName', () => {
   it('rejects a name already taken by a dataset/mart', () => {
     expect(validateMartName('payments', ['payments'])).toBeTruthy()
   })
+  it('rejects a name that differs only by case', () => {
+    expect(validateMartName('PAYMENTS', ['payments'])).toMatch(/занято/)
+  })
   it('accepts a fresh simple identifier', () => {
     expect(validateMartName('rev_by_day', ['payments'])).toBeNull()
   })

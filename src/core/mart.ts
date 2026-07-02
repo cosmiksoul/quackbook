@@ -27,6 +27,6 @@ export function validateMartName(name: string, taken: string[]): string | null {
   if (n === '') return 'Введите имя витрины'
   if (!NAME_RE.test(n)) return 'Только латиница, цифры и _ (не с цифры)'
   if (isInternalTable(n)) return 'Это имя зарезервировано'
-  if (taken.includes(n)) return `Имя «${n}» уже занято`
+  if (taken.some((t) => t.toLowerCase() === n.toLowerCase())) return `Имя «${n}» уже занято`
   return null
 }

@@ -22,11 +22,13 @@ export function tableNameFromFilename(fileName: string): string {
   return ident
 }
 
-/** Make `desired` unique against `taken` by appending _1, _2, ... */
+/** Make `desired` unique against `taken` by appending _1, _2, ...
+ *  Регистронезависимо: каталог DuckDB резолвит имена case-insensitively. */
 export function uniqueTableName(desired: string, taken: string[]): string {
-  if (!taken.includes(desired)) return desired
+  const low = new Set(taken.map((t) => t.toLowerCase()))
+  if (!low.has(desired.toLowerCase())) return desired
   let i = 1
-  while (taken.includes(`${desired}_${i}`)) i++
+  while (low.has(`${desired.toLowerCase()}_${i}`)) i++
   return `${desired}_${i}`
 }
 
